@@ -32,7 +32,7 @@ const NewEntryScreen = ({navigation}) => {
       const success = await storage.saveEntry(newEntry);
       if (success) {
         auth.updateActivity();
-        navigation.goBack();
+        navigation.navigate('Home', { refresh: true });
       }
     } catch (error) {
       console.error('Error saving entry:', error);

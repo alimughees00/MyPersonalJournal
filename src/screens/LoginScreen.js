@@ -15,6 +15,7 @@ const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -35,30 +36,52 @@ const LoginScreen = ({navigation}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
       <View style={styles.innerContainer}>
-        <Text style={styles.title}>My Journal</Text>
-        <Text style={styles.subtitle}>Your personal space for thoughts</Text>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <View style={styles.headerContainer}>
+          <Text style={styles.title}>My Journal</Text>
+          <Text style={styles.subtitle}>Your personal space for thoughts</Text>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                placeholderTextColor="#999"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                placeholderTextColor="#999"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}>
+                <Image
+                  source={
+                    showPassword
+                      ? require('../assets/eye.png')
+                      : require('../assets/eye_off.png')
+                  }
+                  style={styles.eyeIconImage}
+                />
+              </TouchableOpacity>
+            </View>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          </View>
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -67,59 +90,103 @@ const LoginScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
+    padding: 24,
+  },
+  headerContainer: {
     alignItems: 'center',
-    padding: 20,
+    marginBottom: 48,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+    color: '#2d3436',
+    marginBottom: 12,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
+    fontSize: 18,
+    color: '#636e72',
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  input: {
+  formContainer: {
     backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    borderRadius: 20,
+    padding: 24,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  inputContainer: {
+    marginBottom: 24,
+  },
+  inputWrapper: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  input: {
+    padding: 16,
+    fontSize: 16,
+    color: '#2d3436',
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: '#2d3436',
+  },
+  eyeIcon: {
+    padding: 16,
+  },
+  eyeIconImage: {
+    width: 24,
+    height: 24,
+    opacity: 0.6,
   },
   button: {
     backgroundColor: '#6c63ff',
-    padding: 15,
-    borderRadius: 10,
-    width: '100%',
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#6c63ff',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '600',
   },
   errorText: {
-    color: 'red',
-    marginBottom: 10,
+    color: '#ff6b6b',
+    marginTop: 8,
     textAlign: 'center',
+    fontSize: 14,
   },
 });
 

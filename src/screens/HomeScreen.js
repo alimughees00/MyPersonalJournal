@@ -22,7 +22,14 @@ const HomeScreen = ({navigation}) => {
       }
     }, 1000);
 
-    return () => clearInterval(interval);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadEntries();
+    });
+
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, [navigation]);
 
   const loadEntries = async () => {
