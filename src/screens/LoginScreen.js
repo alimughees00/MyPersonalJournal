@@ -14,6 +14,8 @@ import {auth} from '../utils/auth';
 const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [showSecurityQuestion, setShowSecurityQuestion] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -23,8 +25,14 @@ const LoginScreen = ({navigation}) => {
       return;
     }
 
-    const success = await auth.login(username, password);
-    if (success) {
+    const result = await auth.login(username, password, showSecurityQuestion ? securityAnswer : null);
+    
+    if (result.needsSecuritySetup) {
+      setShowSecurityQuestion(true);
+      return;
+    }
+    
+    if (result.success) {
       navigation.replace('Home');
     } else {
       setError('Invalid credentials');
@@ -75,11 +83,35 @@ const LoginScreen = ({navigation}) => {
                 />
               </TouchableOpacity>
             </View>
+            {showSecurityQuestion && (
+              <View style={styles.inputWrapper}>
+                <Text style={styles.securityQuestion}>
+                  What is your favorite childhood pet's name?
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter security answer"
+                  placeholderTextColor="#999"
+                  value={securityAnswer}
+                  onChangeText={setSecurityAnswer}
+                  autoCapitalize="none"
+                />
+              </View>
+            )}
+            
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={styles.forgotPasswordText}>
+              Forgot Username/Password?
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -187,6 +219,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
     fontSize: 14,
+  },
+  forgotPassword: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    color: '#6c63ff',
+    fontSize: 14,
+  },
+  securityQuestion: {
+    fontSize: 14,
+    color: '#636e72',
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
 });
 
