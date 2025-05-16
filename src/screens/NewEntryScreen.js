@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
-import {storage} from '../utils/storage';
+import {storage, TWO_HOURS, MILLISECONDS_PER_DAY} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'react-native-image-picker';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
@@ -32,6 +32,16 @@ const NewEntryScreen = ({navigation}) => {
   const [playTime, setPlayTime] = useState('00:00:00');
   const [duration, setDuration] = useState('00:00:00');
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState(null);
+  // Initialize with default destruct time (never)
+  const [destructTime, setDestructTime] = useState(0);
+
+  const destructTimeOptions = [
+    {label: 'Never', value: 0},
+    {label: '2 Hours', value: TWO_HOURS},
+    {label: '1 Day', value: MILLISECONDS_PER_DAY},
+    {label: '7 Days', value: 7 * MILLISECONDS_PER_DAY},
+    {label: '30 Days', value: 30 * MILLISECONDS_PER_DAY},
+  ];
 
   const [entryId, setEntryId] = useState(null);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
@@ -46,10 +56,8 @@ const NewEntryScreen = ({navigation}) => {
       () => {
         if (title.trim() || content.trim() || media.length > 0) {
           saveEntry();
-          return true; // Prevent default back behavior
         }
-        // Allow default back behavior when entry is empty
-        return false;
+        return true;
       },
     );
 
@@ -72,14 +80,6 @@ const NewEntryScreen = ({navigation}) => {
       unsubscribe();
     };
   }, [navigation, title, content, media]);
-
-  // Remove these lines:
-  // const autoSaveTimer = useRef(null);
-  // const lastSavedContent = useRef({
-  //   title: '',
-  //   content: '',
-  //   mediaLength: 0,
-  // });
 
   const requestPermissions = async () => {
     if (Platform.OS === 'android') {
@@ -251,108 +251,45 @@ const NewEntryScreen = ({navigation}) => {
     );
   };
 
-  // Compare current entry with last saved state
-  // const hasChanges = () => {
-  //   return (
-  //     title !== lastSavedContent.current.title ||
-  //     content !== lastSavedContent.current.content ||
-  //     media.length !== lastSavedContent.current.mediaLength
-  //   );
-  // };
-
-  // const autoSave = async () => {
-  //   // Skip auto-save if any of these conditions are true
-  //   if (
-  //     isSaving.current || // Already in the process of saving
-  //     isProcessingMedia || // Currently processing media
-  //     pendingMediaChanges.current || // Pending media changes
-  //     !hasChanges() || // No changes to save
-  //     (!title.trim() && !content.trim() && media.length === 0) // Nothing to save
-  //   ) {
-  //     return;
-  //   }
-
-  //   console.log('Auto-saving entry...');
-  //   isSaving.current = true;
-
-  //   try {
-  //     const newEntry = {
-  //       id: entryId || undefined, // Only include ID if we have one
-  //       title: title.trim(),
-  //       content: content.trim(),
-  //       media: media,
-  //       date: new Date().toISOString(),
-  //     };
-
-  //     const savedEntry = await storage.saveEntry(newEntry);
-
-  //     if (savedEntry && !entryId) {
-  //       console.log('Setting new entry ID:', savedEntry.id);
-  //       setEntryId(savedEntry.id);
-  //     }
-
-  //     // Update last saved content reference
-  //     lastSavedContent.current = {
-  //       title,
-  //       content,
-  //       mediaLength: media.length,
-  //     };
-
-  //     auth.updateActivity();
-  //   } catch (error) {
-  //     console.error('Error auto-saving:', error);
-  //   } finally {
-  //     isSaving.current = false;
-  //   }
-  // };
-
   const saveEntry = async () => {
-    if (!title.trim() && !content.trim() && media.length === 0) {
-      navigation.goBack();
-      return;
-    }
-
-    // Prevent concurrent saves
-    if (isSaving.current) {
-      return;
-    }
-
+    if (isSaving.current) return;
     isSaving.current = true;
 
     try {
-      const newEntry = {
+      if (!title.trim() && !content.trim() && media.length === 0) {
+        navigation.goBack();
+        return;
+      }
+
+      // Calculate expiration timestamp if destruction time is set
+      const currentTime = new Date().getTime();
+      const expirationTime = destructTime > 0 ? currentTime + destructTime : 0;
+
+      const entry = {
         id: entryId || undefined,
         title: title.trim(),
         content: content.trim(),
-        media: media,
+        media,
         date: new Date().toISOString(),
+        destructTime: destructTime, // Store destruction time value
+        expirationTime: expirationTime, // Store when the entry should expire
       };
 
-      await storage.saveEntry(newEntry);
-      auth.updateActivity();
+      console.log(
+        `Saving entry with destruction time: ${destructTime}, expiration: ${expirationTime}`,
+      );
 
-      navigation.navigate('Home', {refresh: true});
+      const savedEntry = await storage.saveEntry(entry);
+      if (savedEntry) {
+        auth.updateActivity();
+        navigation.navigate('Home', {refresh: true});
+      }
     } catch (error) {
       console.error('Error saving entry:', error);
     } finally {
       isSaving.current = false;
     }
   };
-
-  // Remove the entire autoSave useEffect:
-  // useEffect(() => {
-  //   if (!isProcessingMedia && !isSaving.current && hasChanges()) {
-  //     if (autoSaveTimer.current) {
-  //       clearTimeout(autoSaveTimer.current);
-  //     }
-  //     autoSaveTimer.current = setTimeout(autoSave, 2000);
-  //   }
-  //   return () => {
-  //     if (autoSaveTimer.current) {
-  //       clearTimeout(autoSaveTimer.current);
-  //     }
-  //   };
-  // }, [title, content, media, isProcessingMedia]);
 
   // Clean up audio resources when unmounting
   useEffect(() => {
@@ -533,15 +470,42 @@ const NewEntryScreen = ({navigation}) => {
           <Icon name="arrow-back" size={24} color="#666" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Entry</Text>
-        {/* <TouchableOpacity style={styles.saveButton} onPress={saveEntry}>
+        <TouchableOpacity style={styles.saveButton} onPress={saveEntry}>
           <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity> */}
-        <View></View>
+        </TouchableOpacity>
       </View>
       <ScrollView style={styles.content}>
+        <View style={styles.destructTimeContainer}>
+          <Text style={styles.destructTimeLabel}>Self-destruct after:</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.destructTimeScroll}>
+            {destructTimeOptions.map((option, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.destructTimeOption,
+                  destructTime === option.value &&
+                    styles.destructTimeOptionSelected,
+                ]}
+                onPress={() => setDestructTime(option.value)}>
+                <Text
+                  style={[
+                    styles.destructTimeText,
+                    destructTime === option.value &&
+                      styles.destructTimeTextSelected,
+                  ]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
         <TextInput
           style={styles.titleInput}
           placeholder="Title"
+          placeholderTextColor={'#555'}
           value={title}
           onChangeText={setTitle}
           maxLength={100}
@@ -554,7 +518,6 @@ const NewEntryScreen = ({navigation}) => {
           multiline
           textAlignVertical="top"
         />
-
         {media.length > 0 && (
           <View style={styles.mediaContainer}>
             {media.map((item, index) =>
@@ -644,7 +607,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    right: 16,
   },
   backButton: {
     padding: 8,
@@ -756,6 +718,35 @@ const styles = StyleSheet.create({
   },
   audioTime: {
     color: '#666',
+  },
+  destructTimeContainer: {
+    marginVertical: 10,
+    // paddingHorizontal: 15,
+  },
+  destructTimeLabel: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#555',
+    marginBottom: 16,
+  },
+  destructTimeScroll: {
+    flexGrow: 0,
+  },
+  destructTimeOption: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    marginRight: 10,
+  },
+  destructTimeOptionSelected: {
+    backgroundColor: '#6c63ff',
+  },
+  destructTimeText: {
+    color: '#333',
+  },
+  destructTimeTextSelected: {
+    color: '#fff',
   },
 });
 

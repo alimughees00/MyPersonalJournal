@@ -9,6 +9,7 @@ import {
   Linking,
   RefreshControl,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -41,26 +42,22 @@ const HomeScreen = ({navigation}) => {
   useEffect(() => {
     loadEntries();
 
-    // Update activity timestamp when screen is focused
-    const focusSubscription = navigation.addListener('focus', (e) => {
+    const focusSubscription = navigation.addListener('focus', e => {
       auth.updateActivity();
-      // Only reload entries if skipRefresh is not set
       if (!e.data?.state?.params?.skipRefresh) {
         loadEntries();
       }
     });
 
-    // Update activity timestamp periodically while using the app
     const activityInterval = setInterval(() => {
       auth.updateActivity();
-    }, 60000); // Update every minute
+    }, 60000);
 
-    // Check for expired entries every minute
+    // Check for expired entries every 5 minutes
     const cleanupInterval = setInterval(() => {
-      loadEntries(); // This will automatically remove expired entries
-    }, 60000); // Check every minute
+      loadEntries();
+    }, 300000);
 
-    // Check session expiration every minute
     const sessionInterval = setInterval(() => {
       if (auth.isSessionExpired()) {
         auth.logout();
@@ -71,10 +68,38 @@ const HomeScreen = ({navigation}) => {
     return () => {
       clearInterval(sessionInterval);
       clearInterval(activityInterval);
-      clearInterval(cleanupInterval); // Add this line to clear the cleanup interval
+      clearInterval(cleanupInterval);
       focusSubscription();
     };
   }, [navigation]);
+
+  const renderMediaPreview = media => {
+    if (!media || media.length === 0) return null;
+
+    const firstMedia = media[0];
+    if (firstMedia.type.startsWith('image/')) {
+      return (
+        <Image
+          source={{uri: firstMedia.uri}}
+          style={styles.mediaPreview}
+          resizeMode="cover"
+        />
+      );
+    } else if (firstMedia.type.startsWith('video/')) {
+      return (
+        <View style={styles.mediaPreview}>
+          <Icon name="videocam" size={24} color="#666" />
+        </View>
+      );
+    } else if (firstMedia.type.startsWith('audio/')) {
+      return (
+        <View style={styles.mediaPreview}>
+          <Icon name="audiotrack" size={24} color="#666" />
+        </View>
+      );
+    }
+    return null;
+  };
 
   const renderItem = ({item}) => (
     <TouchableOpacity
@@ -84,16 +109,43 @@ const HomeScreen = ({navigation}) => {
         <Text style={styles.entryDate}>
           {new Date(item.date).toLocaleDateString()}
         </Text>
-        <Text style={styles.entryTime}>
-          {new Date(item.date).toLocaleTimeString()}
-        </Text>
+        {item.expirationTime > 0 && (
+          <View style={styles.expirationBadge}>
+            <Icon name="timer" size={14} color="#fff" />
+            <Text style={styles.expirationText}>
+              {getExpirationText(item.expirationTime)}
+            </Text>
+          </View>
+        )}
       </View>
       <Text style={styles.entryTitle}>{item.title}</Text>
       <Text style={styles.entryPreview} numberOfLines={2}>
         {item.content}
       </Text>
+      {item.media && item.media.length > 0 && (
+        <View style={styles.mediaContainer}>
+          {renderMediaPreview(item.media)}
+          {item.media.length > 1 && (
+            <Text style={styles.mediaCount}>+{item.media.length - 1}</Text>
+          )}
+        </View>
+      )}
     </TouchableOpacity>
   );
+
+  const getExpirationText = expirationTime => {
+    const now = new Date().getTime();
+    const diff = expirationTime - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+
+    if (days > 0) {
+      return `${days}d`;
+    } else if (hours > 0) {
+      return `${hours}h`;
+    }
+    return 'Soon';
+  };
 
   const handleFeedbackPress = () => {
     Linking.openURL(`mailto:${FEEDBACK_EMAIL}`);
@@ -209,6 +261,19 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
+  expirationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6c63ff',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  expirationText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 4,
+  },
   entryTime: {
     color: '#666',
     fontSize: 14,
@@ -222,6 +287,31 @@ const styles = StyleSheet.create({
   entryPreview: {
     color: '#666',
     fontSize: 14,
+    marginBottom: 8,
+  },
+  mediaContainer: {
+    position: 'relative',
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mediaPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  mediaCount: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: '#fff',
+    fontSize: 12,
+    paddingHorizontal: 4,
+    borderRadius: 4,
   },
   fab: {
     position: 'absolute',
