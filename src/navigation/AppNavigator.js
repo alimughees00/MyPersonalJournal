@@ -46,8 +46,7 @@ const AppNavigator = () => {
           name="NewEntry"
           component={NewEntryScreen}
           options={{
-            title: 'New Entry',
-            headerLeft: null,
+            headerShown: false,
           }}
         />
         <Stack.Screen
@@ -55,6 +54,7 @@ const AppNavigator = () => {
           component={ViewEntryScreen}
           options={{
             title: 'Journal Entry',
+            headerTitleAlign: 'center',
           }}
         />
       </Stack.Navigator>

@@ -6,40 +6,75 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Linking,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
+const BUILD_NUMBER = '1.0.0';
+const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
+
 const HomeScreen = ({navigation}) => {
   const [entries, setEntries] = useState([]);
-
-  useEffect(() => {
-    loadEntries();
-    const interval = setInterval(() => {
-      if (auth.isSessionExpired()) {
-        navigation.replace('Login');
-      }
-    }, 1000);
-
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadEntries();
-    });
-
-    return () => {
-      clearInterval(interval);
-      unsubscribe();
-    };
-  }, [navigation]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadEntries = async () => {
     try {
+      setIsLoading(true);
       const loadedEntries = await storage.getEntries();
-      setEntries(loadedEntries.reverse());
+      // Sort entries by date in descending order (newest first)
+      const sortedEntries = loadedEntries.sort(
+        (a, b) => new Date(b.date) - new Date(a.date),
+      );
+      setEntries(sortedEntries);
     } catch (error) {
       console.error('Error loading entries:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadEntries();
+
+    // Update activity timestamp when screen is focused
+    const focusSubscription = navigation.addListener('focus', (e) => {
+      auth.updateActivity();
+      // Only reload entries if skipRefresh is not set
+      if (!e.data?.state?.params?.skipRefresh) {
+        loadEntries();
+      }
+    });
+
+    // Update activity timestamp periodically while using the app
+    const activityInterval = setInterval(() => {
+      auth.updateActivity();
+    }, 60000); // Update every minute
+
+    // Check for expired entries every minute
+    const cleanupInterval = setInterval(() => {
+      loadEntries(); // This will automatically remove expired entries
+    }, 60000); // Check every minute
+
+    // Check session expiration every minute
+    const sessionInterval = setInterval(() => {
+      if (auth.isSessionExpired()) {
+        auth.logout();
+        navigation.replace('Login');
+      }
+    }, 60000);
+
+    return () => {
+      clearInterval(sessionInterval);
+      clearInterval(activityInterval);
+      clearInterval(cleanupInterval); // Add this line to clear the cleanup interval
+      focusSubscription();
+    };
+  }, [navigation]);
 
   const renderItem = ({item}) => (
     <TouchableOpacity
@@ -60,10 +95,25 @@ const HomeScreen = ({navigation}) => {
     </TouchableOpacity>
   );
 
+  const handleFeedbackPress = () => {
+    Linking.openURL(`mailto:${FEEDBACK_EMAIL}`);
+  };
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadEntries();
+    } catch (error) {
+      console.error('Error refreshing entries:', error);
+    }
+    setRefreshing(false);
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
       <View style={styles.header}>
+        <View></View>
         <Text style={styles.headerTitle}>My Journal</Text>
         <TouchableOpacity
           onPress={() => {
@@ -74,23 +124,42 @@ const HomeScreen = ({navigation}) => {
           <Icon name="logout" size={24} color="#666" />
         </TouchableOpacity>
       </View>
-      <FlatList
-        data={entries}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No entries yet</Text>
-            <Text style={styles.emptySubtext}>Start writing your thoughts</Text>
-          </View>
-        }
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6c63ff" />
+        </View>
+      ) : (
+        <FlatList
+          data={entries}
+          showsVerticalScrollIndicator={false}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContainer}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No entries yet</Text>
+              <Text style={styles.emptySubtext}>
+                Start writing your thoughts
+              </Text>
+            </View>
+          }
+        />
+      )}
+
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('NewEntry')}>
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
+      <View style={styles.footer}>
+        <Text style={styles.buildNumber}>Build {BUILD_NUMBER}</Text>
+        <TouchableOpacity onPress={handleFeedbackPress}>
+          <Text style={styles.feedbackLink}>{FEEDBACK_EMAIL}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -107,6 +176,11 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     elevation: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
@@ -152,7 +226,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 16,
-    bottom: 16,
+    bottom: 84,
     backgroundColor: '#6c63ff',
     width: 56,
     height: 56,
@@ -173,6 +247,23 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 16,
     color: '#999',
+  },
+  footer: {
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  buildNumber: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+  },
+  feedbackLink: {
+    fontSize: 14,
+    color: '#6c63ff',
+    textDecorationLine: 'underline',
   },
 });
 

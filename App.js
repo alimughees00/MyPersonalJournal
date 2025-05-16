@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {SafeAreaView, StatusBar, StyleSheet, LogBox} from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/components/SplashScreen';
 
 const App = () => {
+  // Hide all warning messages
+  useEffect(() => {
+    LogBox.ignoreAllLogs(); // Ignore all log warnings in app
+  }, []);
+
   const [isLoading, setIsLoading] = useState(true);
 
   return (
