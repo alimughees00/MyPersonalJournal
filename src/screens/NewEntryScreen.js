@@ -11,6 +11,7 @@ import {
   Image,
   PermissionsAndroid,
   BackHandler,
+  StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
@@ -465,9 +466,11 @@ const NewEntryScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
+        
+      <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.header}>
         <TouchableOpacity onPress={saveEntry} style={styles.backButton}>
-          <Icon name="arrow-back" size={24} color="#666" />
+          <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Entry</Text>
         <TouchableOpacity style={styles.saveButton} onPress={saveEntry}>
@@ -505,7 +508,7 @@ const NewEntryScreen = ({navigation}) => {
         <TextInput
           style={styles.titleInput}
           placeholder="Title"
-          placeholderTextColor={'#555'}
+          placeholderTextColor={'#fff'}
           value={title}
           onChangeText={setTitle}
           maxLength={100}
@@ -513,6 +516,7 @@ const NewEntryScreen = ({navigation}) => {
         <TextInput
           style={styles.contentInput}
           placeholder="Write your thoughts..."
+          placeholderTextColor={'#fff'}
           value={content}
           onChangeText={setContent}
           multiline
@@ -555,7 +559,7 @@ const NewEntryScreen = ({navigation}) => {
           <Icon
             name="image"
             size={24}
-            color={isProcessingMedia || isRecording ? '#ccc' : '#666'}
+            color={isProcessingMedia || isRecording ? '#ccc' : '#fff'}
           />
         </TouchableOpacity>
         <TouchableOpacity
@@ -565,7 +569,7 @@ const NewEntryScreen = ({navigation}) => {
           <Icon
             name="videocam"
             size={24}
-            color={isProcessingMedia || isRecording ? '#ccc' : '#666'}
+            color={isProcessingMedia || isRecording ? '#ccc' : '#fff'}
           />
         </TouchableOpacity>
         <TouchableOpacity
@@ -580,7 +584,7 @@ const NewEntryScreen = ({navigation}) => {
             name={isRecording ? 'stop' : 'mic'}
             size={24}
             color={
-              isRecording ? '#ff4444' : isProcessingMedia ? '#ccc' : '#666'
+              isRecording ? '#ff4444' : isProcessingMedia ? '#ccc' : '#fff'
             }
           />
         </TouchableOpacity>
@@ -593,26 +597,28 @@ const NewEntryScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#988686',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#988686',
     elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#5C4E4E',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   backButton: {
     padding: 8,
   },
   saveButton: {
-    backgroundColor: '#6c63ff',
+    backgroundColor: '#5C4E4E',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -628,13 +634,13 @@ const styles = StyleSheet.create({
   titleInput: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 16,
     padding: 0,
   },
   contentInput: {
     fontSize: 16,
-    color: '#666',
+    color: '#fff',
     lineHeight: 24,
     minHeight: 200,
     padding: 0,
@@ -672,13 +678,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
+    borderTopColor: '#5C4E4E',
+    backgroundColor: '#988686',
   },
   toolbarButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#5C4E4E',
   },
   recording: {
     backgroundColor: '#ffe0e0',
@@ -726,7 +732,7 @@ const styles = StyleSheet.create({
   destructTimeLabel: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#555',
+    color: '#fff',
     marginBottom: 16,
   },
   destructTimeScroll: {
@@ -736,14 +742,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#baabab',
     marginRight: 10,
   },
   destructTimeOptionSelected: {
-    backgroundColor: '#6c63ff',
+    backgroundColor: '#5C4E4E',
   },
   destructTimeText: {
-    color: '#333',
+    color: '#fff',
   },
   destructTimeTextSelected: {
     color: '#fff',

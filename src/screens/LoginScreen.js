@@ -8,8 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  StatusBar,
 } from 'react-native';
 import {auth} from '../utils/auth';
+import Icon from 'react-native-vector-icons/FontAwesome5';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 
 const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
@@ -25,13 +31,17 @@ const LoginScreen = ({navigation}) => {
       return;
     }
 
-    const result = await auth.login(username, password, showSecurityQuestion ? securityAnswer : null);
-    
+    const result = await auth.login(
+      username,
+      password,
+      showSecurityQuestion ? securityAnswer : null,
+    );
+
     if (result.needsSecuritySetup) {
       setShowSecurityQuestion(true);
       return;
     }
-    
+
     if (result.success) {
       navigation.replace('Home');
     } else {
@@ -43,8 +53,15 @@ const LoginScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
+        
+      <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.innerContainer}>
         <View style={styles.headerContainer}>
+          <Image
+            source={require('../assets/logo.png')}
+            style={styles.icon}
+            resizeMode="contain"
+          />
           <Text style={styles.title}>My Journal</Text>
           <Text style={styles.subtitle}>Your personal space for thoughts</Text>
         </View>
@@ -55,7 +72,7 @@ const LoginScreen = ({navigation}) => {
               <TextInput
                 style={styles.input}
                 placeholder="Username"
-                placeholderTextColor="#999"
+                placeholderTextColor="#fff"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -65,7 +82,7 @@ const LoginScreen = ({navigation}) => {
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Password"
-                placeholderTextColor="#999"
+                placeholderTextColor="#fff"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -73,14 +90,12 @@ const LoginScreen = ({navigation}) => {
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}>
-                <Image
-                  source={
-                    showPassword
-                      ? require('../assets/eye.png')
-                      : require('../assets/eye_off.png')
-                  }
-                  style={styles.eyeIconImage}
+                <Icon
+                  name={showPassword ? 'eye' : 'eye-slash'}
+                  size={15}
+                  color={showPassword ? '#5C4E4E' : '#fff'}
                 />
+                +41774755214
               </TouchableOpacity>
             </View>
             {showSecurityQuestion && (
@@ -98,14 +113,14 @@ const LoginScreen = ({navigation}) => {
                 />
               </View>
             )}
-            
+
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleLogin}>
             <Text style={styles.buttonText}>Sign In</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.forgotPassword}
             onPress={() => navigation.navigate('ForgotPassword')}>
@@ -122,111 +137,83 @@ const LoginScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#988686',
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+  },
+  icon: {
+    width: wp(40),
+    height: hp(18),
   },
   title: {
-    fontSize: 36,
+    fontSize: hp(4.7),
     fontWeight: 'bold',
-    color: '#2d3436',
-    marginBottom: 12,
+    color: '#fff',
+    marginBottom: hp(2),
   },
   subtitle: {
-    fontSize: 18,
-    color: '#636e72',
+    fontSize: hp(2.5),
+    color: '#fff',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: hp(4),
   },
   formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  inputContainer: {
-    marginBottom: 24,
+    paddingVertical: hp(6),
+    paddingHorizontal: wp(10),
   },
   inputWrapper: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#5C4E4E',
+    borderBottomWidth: hp(0.3),
   },
   input: {
-    padding: 16,
-    fontSize: 16,
+    fontSize: hp(2.4),
     color: '#2d3436',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#5C4E4E',
+    borderBottomWidth: hp(0.3),
+    marginVertical: hp(1),
   },
   passwordInput: {
     flex: 1,
-    padding: 16,
-    fontSize: 16,
+    fontSize: hp(2.4),
     color: '#2d3436',
   },
   eyeIcon: {
-    padding: 16,
-  },
-  eyeIconImage: {
-    width: 24,
-    height: 24,
-    opacity: 0.6,
+    paddingHorizontal: wp(5),
   },
   button: {
-    backgroundColor: '#6c63ff',
-    padding: 18,
-    borderRadius: 12,
+    marginTop: hp(5),
+    backgroundColor: '#5C4E4E',
+    paddingVertical: hp(2),
+    borderRadius: wp(3),
     alignItems: 'center',
-    shadowColor: '#6c63ff',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: hp(2.7),
+    fontWeight: 'bold',
   },
   errorText: {
-    color: '#ff6b6b',
-    marginTop: 8,
+    color: '#C70039',
+    marginTop: hp(1.5),
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: hp(2),
   },
   forgotPassword: {
-    marginTop: 16,
+    marginTop: hp(3),
     alignItems: 'center',
   },
   forgotPasswordText: {
-    color: '#6c63ff',
-    fontSize: 14,
+    color: '#fff',
+    fontSize: hp(2),
   },
   securityQuestion: {
     fontSize: 14,

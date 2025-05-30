@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   BackHandler,
+  StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
@@ -25,10 +26,10 @@ const ViewEntryScreen = ({navigation, route}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playTime, setPlayTime] = useState('00:00:00');
   const [duration, setDuration] = useState('00:00:00');
-  
+
   const audioPlayer = useRef(new AudioRecorderPlayer());
 
-  const playAudio = async (uri) => {
+  const playAudio = async uri => {
     try {
       if (isPlaying) {
         await stopAudio();
@@ -37,11 +38,13 @@ const ViewEntryScreen = ({navigation, route}) => {
 
       console.log('Playing audio:', uri);
       await audioPlayer.current.startPlayer(uri);
-      audioPlayer.current.addPlayBackListener((e) => {
+      audioPlayer.current.addPlayBackListener(e => {
         if (e.currentPosition === e.duration) {
           stopAudio();
         } else {
-          setPlayTime(audioPlayer.current.mmssss(Math.floor(e.currentPosition)));
+          setPlayTime(
+            audioPlayer.current.mmssss(Math.floor(e.currentPosition)),
+          );
           setDuration(audioPlayer.current.mmssss(Math.floor(e.duration)));
         }
       });
@@ -97,10 +100,10 @@ const ViewEntryScreen = ({navigation, route}) => {
           key={index}
           style={styles.audioContainer}
           onPress={() => playAudio(mediaItem.uri)}>
-          <Icon 
-            name={isPlaying ? "pause-circle-filled" : "play-circle-filled"} 
-            size={40} 
-            color="#6c63ff" 
+          <Icon
+            name={isPlaying ? 'pause-circle-filled' : 'play-circle-filled'}
+            size={40}
+            color="#6c63ff"
           />
           <Text style={styles.audioTime}>
             {isPlaying ? playTime : duration}
@@ -119,18 +122,22 @@ const ViewEntryScreen = ({navigation, route}) => {
               <Icon name="check-circle" size={28} color="#000000" />
             </TouchableOpacity>
           ) : (
-            <>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+              }}>
               <TouchableOpacity
                 onPress={() => setIsEditing(true)}
                 style={styles.headerButton}>
-                <Icon name="edit" size={24} color="#6c63ff" />
+                <Icon name="edit" size={24} color="#0099ff" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDelete}
                 style={[styles.headerButton, styles.deleteButton]}>
-                <Icon name="delete" size={28} color="#ff4444" />
+                <Icon name="delete" size={24} color="#ff4d4d" />
               </TouchableOpacity>
-            </>
+            </View>
           )}
         </View>
       ),
@@ -155,7 +162,7 @@ const ViewEntryScreen = ({navigation, route}) => {
         auth.updateActivity();
         setIsEditing(false);
         // Navigate back with a flag to prevent immediate refresh
-        navigation.navigate('Home', { skipRefresh: true });
+        navigation.navigate('Home', {skipRefresh: true});
         Alert.alert('Success', 'Entry updated successfully');
       }
     } catch (error) {
@@ -176,7 +183,7 @@ const ViewEntryScreen = ({navigation, route}) => {
             if (success) {
               auth.updateActivity();
               // Navigate back with a flag to prevent immediate refresh
-              navigation.navigate('Home', { skipRefresh: true });
+              navigation.navigate('Home', {skipRefresh: true});
             }
           } catch (error) {
             console.error('Error deleting entry:', error);
@@ -197,7 +204,7 @@ const ViewEntryScreen = ({navigation, route}) => {
             text: 'Discard',
             onPress: () => {
               setIsEditing(false);
-              navigation.navigate('Home', { skipRefresh: true });
+              navigation.navigate('Home', {skipRefresh: true});
             },
             style: 'destructive',
           },
@@ -210,18 +217,18 @@ const ViewEntryScreen = ({navigation, route}) => {
             style: 'cancel',
           },
         ],
-        { cancelable: true },
+        {cancelable: true},
       );
       return true; // Prevents default back action
     }
-    navigation.navigate('Home', { skipRefresh: true });
+    navigation.navigate('Home', {skipRefresh: true});
     return true;
   };
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
-      handleBackPress
+      handleBackPress,
     );
 
     return () => {
@@ -278,15 +285,17 @@ const ViewEntryScreen = ({navigation, route}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#988686',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerButton: {
-    marginHorizontal: 4,
     padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#5C4E4E',
+    marginRight: 10,
   },
   headerButtonText: {
     color: '#6c63ff',
@@ -294,15 +303,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   deleteButton: {
-    marginLeft: 8,
+    // marginLeft: 8,
   },
   dateContainer: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   dateText: {
-    color: '#666',
+    color: '#000',
     fontSize: 14,
   },
   editContainer: {
@@ -314,13 +321,13 @@ const styles = StyleSheet.create({
   titleInput: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 16,
     padding: 0,
   },
   contentInput: {
     fontSize: 16,
-    color: '#666',
+    color: '#fff',
     lineHeight: 24,
     minHeight: 200,
     padding: 0,
@@ -328,12 +335,12 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#000',
     marginBottom: 16,
   },
   contentText: {
     fontSize: 16,
-    color: '#666',
+    color: '#000',
     lineHeight: 24,
   },
   mediaContainer: {
@@ -358,6 +365,11 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: '#666',
     fontSize: 14,
+  },
+  toolbarButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#5C4E4E',
   },
 });
 

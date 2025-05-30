@@ -55,6 +55,15 @@ const AppNavigator = () => {
           options={{
             title: 'Journal Entry',
             headerTitleAlign: 'center',
+            headerStyle: {
+              backgroundColor: '#988686', // Header background color
+              borderBottomWidth: 1,
+              borderBottomColor: '#5C4E4E',
+            },
+            headerTintColor: '#fff', // Back button and title text color
+            headerTitleStyle: {
+              color: '#fff'
+            },
           }}
         />
       </Stack.Navigator>

@@ -14,8 +14,12 @@ import {
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
-const BUILD_NUMBER = '1.0.0';
+const BUILD_NUMBER = '1.0.1';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
 const HomeScreen = ({navigation}) => {
@@ -94,7 +98,7 @@ const HomeScreen = ({navigation}) => {
     } else if (firstMedia.type.startsWith('audio/')) {
       return (
         <View style={styles.mediaPreview}>
-          <Icon name="audiotrack" size={24} color="#666" />
+          <Icon name="audiotrack" size={24} color="#fff" />
         </View>
       );
     }
@@ -118,10 +122,12 @@ const HomeScreen = ({navigation}) => {
           </View>
         )}
       </View>
-      <Text style={styles.entryTitle}>{item.title}</Text>
-      <Text style={styles.entryPreview} numberOfLines={2}>
-        {item.content}
-      </Text>
+      {item.title ? <Text style={styles.entryTitle}>{item.title}</Text> : null}
+      {item.content ? (
+        <Text style={styles.entryPreview} numberOfLines={2}>
+          {item.content}
+        </Text>
+      ) : null}
       {item.media && item.media.length > 0 && (
         <View style={styles.mediaContainer}>
           {renderMediaPreview(item.media)}
@@ -163,7 +169,7 @@ const HomeScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f5f5f5" />
+      <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.header}>
         <View></View>
         <Text style={styles.headerTitle}>My Journal</Text>
@@ -173,12 +179,12 @@ const HomeScreen = ({navigation}) => {
             navigation.replace('Login');
           }}
           style={styles.logoutButton}>
-          <Icon name="logout" size={24} color="#666" />
+          <Icon name="logout" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6c63ff" />
+          <ActivityIndicator size="large" color="#5C4E4E" />
         </View>
       ) : (
         <FlatList
@@ -219,15 +225,17 @@ const HomeScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#988686',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
-    elevation: 2,
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(8),
+    backgroundColor: '#988686',
+    borderBottomWidth: hp(0.15),
+    borderBottomColor: '#5C4E4E',
   },
   loadingContainer: {
     flex: 1,
@@ -235,22 +243,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    paddingLeft: wp(10),
+    fontSize: hp(3.3),
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   logoutButton: {
-    padding: 8,
+    // padding: 8,
   },
   listContainer: {
-    padding: 16,
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(5),
   },
   entryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
+    backgroundColor: '#baabab',
+    borderRadius: wp(3),
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(5),
+    marginBottom: hp(2),
+    elevation: 4,
   },
   entryHeader: {
     flexDirection: 'row',
@@ -258,101 +269,103 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   entryDate: {
-    color: '#666',
-    fontSize: 14,
+    color: '#fff',
+    fontSize: hp(1.8),
   },
   expirationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#6c63ff',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: '#5C4E4E',
+    borderRadius: wp(4),
+    paddingHorizontal: wp(2),
+    paddingVertical: hp(0.7),
   },
   expirationText: {
     color: '#fff',
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  entryTime: {
-    color: '#666',
-    fontSize: 14,
+    fontSize: hp(1.5),
+    marginLeft: wp(1),
   },
   entryTitle: {
-    fontSize: 18,
+    fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    color: '#fff',
+    marginBottom: hp(0.6),
   },
   entryPreview: {
-    color: '#666',
-    fontSize: 14,
-    marginBottom: 8,
+    color: '#fff',
+    fontSize: hp(1.9),
+    marginBottom: hp(1),
   },
   mediaContainer: {
     position: 'relative',
-    width: 60,
-    height: 60,
-    borderRadius: 8,
+    width: wp(10),
+    height: hp(5),
+    borderRadius: wp(3),
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#5C4E4E',
     justifyContent: 'center',
     alignItems: 'center',
+    alignContent: 'center',
+    marginRight: wp(4),
   },
   mediaPreview: {
-    width: '100%',
-    height: '100%',
+    // justifyContent: 'center',
+    // alignItems: 'center',
+    // alignContent: 'center',
   },
   mediaCount: {
     position: 'absolute',
-    bottom: 4,
-    right: 4,
+    bottom: 25,
+    right: -15,
     backgroundColor: 'rgba(0,0,0,0.5)',
     color: '#fff',
     fontSize: 12,
     paddingHorizontal: 4,
-    borderRadius: 4,
+    borderRadius: wp(5),
   },
   fab: {
     position: 'absolute',
-    right: 16,
-    bottom: 84,
-    backgroundColor: '#6c63ff',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    right: wp(8),
+    bottom: hp(12),
+    backgroundColor: '#5C4E4E',
+    width: wp(16),
+    height: hp(7.7),
+    borderRadius: wp(8),
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 4,
   },
   emptyContainer: {
+    flex: 1,
     alignItems: 'center',
-    marginTop: 100,
+    alignContent: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: 20,
-    color: '#666',
+    color: '#fff',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#999',
+    color: '#fff',
   },
   footer: {
-    padding: 16,
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(5),
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    backgroundColor: '#988686',
+    borderTopWidth: hp(0.15),
+    borderTopColor: '#5C4E4E',
   },
   buildNumber: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
+    fontSize: hp(1.8),
+    color: '#000',
+    marginBottom: hp(0.3),
   },
   feedbackLink: {
-    fontSize: 14,
-    color: '#6c63ff',
+    fontSize: hp(1.8),
+    color: '#000',
     textDecorationLine: 'underline',
   },
 });

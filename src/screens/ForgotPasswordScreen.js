@@ -53,7 +53,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter your answer"
-                placeholderTextColor="#999"
+                placeholderTextColor="#fff"
                 value={securityAnswer}
                 onChangeText={setSecurityAnswer}
                 autoCapitalize="none"
@@ -80,12 +80,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#988686',
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    // padding: 24,
   },
   headerContainer: {
     alignItems: 'center',
@@ -94,43 +94,44 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#2d3436',
+    color: '#fff',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 18,
-    color: '#636e72',
+    color: '#fff',
     textAlign: 'center',
     lineHeight: 24,
   },
   formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 20,
+    // backgroundColor: 'white',
+    // borderRadius: 20,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 4,
+    // },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 12,
+    // elevation: 5,
   },
   inputContainer: {
     marginBottom: 24,
   },
   question: {
     fontSize: 16,
-    color: '#2d3436',
+    color: '#fff',
     marginBottom: 16,
     textAlign: 'center',
     fontWeight: '500',
   },
   inputWrapper: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    // backgroundColor: '#f8f9fa',
+    // borderRadius: 12,
+    borderBottomWidth: 1,
+    borderColor: '#5C4E4E',
+    marginVertical: 50,
   },
   input: {
     padding: 16,
@@ -138,11 +139,11 @@ const styles = StyleSheet.create({
     color: '#2d3436',
   },
   button: {
-    backgroundColor: '#6c63ff',
+    backgroundColor: '#5C4E4E',
     padding: 18,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#6c63ff',
+    shadowColor: '#988686',
     shadowOffset: {
       width: 0,
       height: 4,
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButtonText: {
-    color: '#6c63ff',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
