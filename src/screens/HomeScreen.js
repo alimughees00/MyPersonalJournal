@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
     // padding: 8,
   },
   listContainer: {
+    flexGrow: 1,
     paddingVertical: hp(2),
     paddingHorizontal: wp(5),
   },
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
-    alignContent: 'center',
+    // alignContent: 'center',
     justifyContent: 'center',
   },
   emptyText: {

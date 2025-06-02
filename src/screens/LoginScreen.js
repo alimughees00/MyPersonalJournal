@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+} from 'react-native-responsive-screen';
 
 const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
@@ -53,7 +53,6 @@ const LoginScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
-        
       <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.innerContainer}>
         <View style={styles.headerContainer}>
@@ -106,7 +105,7 @@ const LoginScreen = ({navigation}) => {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter security answer"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#000"
                   value={securityAnswer}
                   onChangeText={setSecurityAnswer}
                   autoCapitalize="none"
@@ -216,10 +215,10 @@ const styles = StyleSheet.create({
     fontSize: hp(2),
   },
   securityQuestion: {
-    fontSize: 14,
-    color: '#636e72',
+    fontSize: wp(3.9),
+    color: '#fff',
     marginBottom: 8,
-    paddingHorizontal: 16,
+    // paddingHorizontal: 16,
     paddingTop: 16,
   },
 });
