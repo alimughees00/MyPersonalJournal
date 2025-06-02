@@ -316,8 +316,8 @@ const styles = StyleSheet.create({
   },
   mediaCount: {
     position: 'absolute',
-    bottom: 25,
-    right: -15,
+    bottom: 23,
+    right: 3,
     backgroundColor: 'rgba(0,0,0,0.5)',
     color: '#fff',
     fontSize: 12,

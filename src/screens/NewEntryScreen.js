@@ -466,16 +466,16 @@ const NewEntryScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
-        
       <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.header}>
         <TouchableOpacity onPress={saveEntry} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Entry</Text>
-        <TouchableOpacity style={styles.saveButton} onPress={saveEntry}>
+        {/* <TouchableOpacity style={styles.saveButton} onPress={saveEntry}>
           <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
+        <View></View>
       </View>
       <ScrollView style={styles.content}>
         <View style={styles.destructTimeContainer}>
