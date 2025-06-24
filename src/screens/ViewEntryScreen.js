@@ -331,6 +331,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     minHeight: 200,
     padding: 0,
+    paddingBottom: 15,
   },
   titleText: {
     fontSize: 24,

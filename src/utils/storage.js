@@ -4,6 +4,7 @@ import RNFS from 'react-native-fs';
 const ENTRIES_KEY = 'journal_entries';
 export const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 export const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+export const MILLISECONDS_PER_MIN = 60 * 1000;
 
 export const storage = {
   async getEntries() {

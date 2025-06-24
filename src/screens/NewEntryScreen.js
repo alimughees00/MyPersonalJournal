@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
-import {storage, TWO_HOURS, MILLISECONDS_PER_DAY} from '../utils/storage';
+import {storage, TWO_HOURS, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MIN} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'react-native-image-picker';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
@@ -38,6 +38,7 @@ const NewEntryScreen = ({navigation}) => {
 
   const destructTimeOptions = [
     {label: 'Never', value: 0},
+    {label: '1 Min', value: MILLISECONDS_PER_MIN},
     {label: '2 Hours', value: TWO_HOURS},
     {label: '1 Day', value: MILLISECONDS_PER_DAY},
     {label: '7 Days', value: 7 * MILLISECONDS_PER_DAY},
@@ -466,7 +467,6 @@ const NewEntryScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
-        
       <StatusBar barStyle="dark-content" backgroundColor="#988686" />
       <View style={styles.header}>
         <TouchableOpacity onPress={saveEntry} style={styles.backButton}>
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     lineHeight: 24,
     minHeight: 200,
-    padding: 0,
+    paddingBottom: 15,
   },
   mediaContainer: {
     flexDirection: 'row',
