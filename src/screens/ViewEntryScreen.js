@@ -11,6 +11,10 @@ import {
   BackHandler,
   StatusBar,
 } from 'react-native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -19,7 +23,7 @@ import Video from 'react-native-video';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
 const ViewEntryScreen = ({navigation, route}) => {
-  const {entry} = route.params;
+  const {entry, mode} = route.params;
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
@@ -27,252 +31,117 @@ const ViewEntryScreen = ({navigation, route}) => {
   const [playTime, setPlayTime] = useState('00:00:00');
   const [duration, setDuration] = useState('00:00:00');
 
+  // Color schemes based on mode
+  const colors = {
+    light: {
+      background: '#F8F5F5',
+      card: '#FFFFFF',
+      text: '#424242',
+      secondaryText: '#757575',
+      primary: '#5C4E4E',
+      header: '#5C4E4E',
+      inputBg: '#FFFFFF',
+      mediaBg: '#F0F0F0',
+      audioIcon: '#5C4E4E',
+      deleteButton: '#D32F2F',
+    },
+    dark: {
+      background: '#121212',
+      card: '#1E1E1E',
+      text: '#E0E0E0',
+      secondaryText: '#A0A0A0',
+      primary: '#988686',
+      header: '#1E1E1E',
+      inputBg: '#2D2D2D',
+      mediaBg: '#2D2D2D',
+      audioIcon: '#988686',
+      deleteButton: '#B71C1C',
+    }
+  };
+
+  const currentColors = mode ? colors.dark : colors.light;
+
   const audioPlayer = useRef(new AudioRecorderPlayer());
 
-  const playAudio = async uri => {
-    try {
-      if (isPlaying) {
-        await stopAudio();
-        return;
-      }
-
-      console.log('Playing audio:', uri);
-      await audioPlayer.current.startPlayer(uri);
-      audioPlayer.current.addPlayBackListener(e => {
-        if (e.currentPosition === e.duration) {
-          stopAudio();
-        } else {
-          setPlayTime(
-            audioPlayer.current.mmssss(Math.floor(e.currentPosition)),
-          );
-          setDuration(audioPlayer.current.mmssss(Math.floor(e.duration)));
-        }
-      });
-      setIsPlaying(true);
-    } catch (error) {
-      console.log('Error playing audio:', error);
-    }
-  };
-
-  const stopAudio = async () => {
-    try {
-      await audioPlayer.current.stopPlayer();
-      await audioPlayer.current.removePlayBackListener();
-      setIsPlaying(false);
-      setPlayTime('00:00:00');
-    } catch (error) {
-      console.log('Error stopping audio:', error);
-    }
-  };
-
-  // Add cleanup in useEffect
-  useEffect(() => {
-    return () => {
-      if (audioPlayer.current) {
-        stopAudio();
-      }
-    };
-  }, []);
-
-  const renderMedia = (mediaItem, index) => {
-    if (mediaItem.type.startsWith('image')) {
-      return (
-        <Image
-          key={index}
-          source={{uri: mediaItem.uri}}
-          style={styles.mediaPreview}
-          resizeMode="cover"
-        />
-      );
-    } else if (mediaItem.type.startsWith('video')) {
-      return (
-        <Video
-          key={index}
-          source={{uri: mediaItem.uri}}
-          style={styles.mediaPreview}
-          resizeMode="cover"
-          controls={true}
-        />
-      );
-    } else {
-      return (
-        <TouchableOpacity
-          key={index}
-          style={styles.audioContainer}
-          onPress={() => playAudio(mediaItem.uri)}>
-          <Icon
-            name={isPlaying ? 'pause-circle-filled' : 'play-circle-filled'}
-            size={40}
-            color="#6c63ff"
-          />
-          <Text style={styles.audioTime}>
-            {isPlaying ? playTime : duration}
-          </Text>
-        </TouchableOpacity>
-      );
-    }
-  };
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.headerButtons}>
-          {isEditing ? (
-            <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-              <Icon name="check-circle" size={28} color="#000000" />
-            </TouchableOpacity>
-          ) : (
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-around',
-              }}>
-              <TouchableOpacity
-                onPress={() => setIsEditing(true)}
-                style={styles.headerButton}>
-                <Icon name="edit" size={24} color="#0099ff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleDelete}
-                style={[styles.headerButton, styles.deleteButton]}>
-                <Icon name="delete" size={24} color="#ff4d4d" />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      ),
-    });
-  }, [isEditing, title, content]);
-
-  const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
-      Alert.alert('Error', 'Title and content cannot be empty');
-      return;
-    }
-
-    try {
-      const updatedEntry = {
-        ...entry,
-        title: title.trim(),
-        content: content.trim(),
-      };
-
-      const success = await storage.updateEntry(updatedEntry);
-      if (success) {
-        auth.updateActivity();
-        setIsEditing(false);
-        // Navigate back with a flag to prevent immediate refresh
-        navigation.navigate('Home', {skipRefresh: true});
-        Alert.alert('Success', 'Entry updated successfully');
-      }
-    } catch (error) {
-      console.error('Error saving entry:', error);
-      Alert.alert('Error', 'Failed to save changes');
-    }
-  };
-
-  const handleDelete = () => {
-    Alert.alert('Delete Entry', 'Are you sure you want to delete this entry?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const success = await storage.deleteEntry(entry.id);
-            if (success) {
-              auth.updateActivity();
-              // Navigate back with a flag to prevent immediate refresh
-              navigation.navigate('Home', {skipRefresh: true});
-            }
-          } catch (error) {
-            console.error('Error deleting entry:', error);
-            Alert.alert('Error', 'Failed to delete entry');
-          }
-        },
-      },
-    ]);
-  };
-
-  const handleBackPress = () => {
-    if (isEditing) {
-      Alert.alert(
-        'Save Changes',
-        'Do you want to save your changes?',
-        [
-          {
-            text: 'Discard',
-            onPress: () => {
-              setIsEditing(false);
-              navigation.navigate('Home', {skipRefresh: true});
-            },
-            style: 'destructive',
-          },
-          {
-            text: 'Save',
-            onPress: handleSave,
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-        {cancelable: true},
-      );
-      return true; // Prevents default back action
-    }
-    navigation.navigate('Home', {skipRefresh: true});
-    return true;
-  };
-
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      handleBackPress,
-    );
-
-    return () => {
-      backHandler.remove();
-      if (audioPlayer.current) {
-        stopAudio();
-      }
-    };
-  }, [isEditing]);
+  // ... (keep all your existing functions unchanged)
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.dateContainer}>
-        <Text style={styles.dateText}>
+    <ScrollView style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar barStyle={mode ? 'light-content' : 'dark-content'} backgroundColor={currentColors.header} />
+      <View style={[styles.dateContainer, {backgroundColor: currentColors.card}]}>
+        <Text style={[styles.dateText, {color: currentColors.secondaryText}]}>
           {new Date(entry.date).toLocaleDateString()} at{' '}
           {new Date(entry.date).toLocaleTimeString()}
         </Text>
       </View>
 
       {isEditing ? (
-        <View style={styles.editContainer}>
+        <View style={[styles.editContainer, {backgroundColor: currentColors.card}]}>
           <TextInput
-            style={styles.titleInput}
+            style={[styles.titleInput, {
+              color: currentColors.text,
+              borderBottomColor: currentColors.secondaryText
+            }]}
             value={title}
             onChangeText={setTitle}
             placeholder="Title"
+            placeholderTextColor={currentColors.secondaryText}
             maxLength={100}
           />
           <TextInput
-            style={styles.contentInput}
+            style={[styles.contentInput, {color: currentColors.text}]}
             value={content}
             onChangeText={setContent}
             placeholder="Write your thoughts..."
+            placeholderTextColor={currentColors.secondaryText}
             multiline
             textAlignVertical="top"
           />
         </View>
       ) : (
-        <View style={styles.viewContainer}>
-          <Text style={styles.titleText}>{title}</Text>
-          <Text style={styles.contentText}>{content}</Text>
+        <View style={[styles.viewContainer, {backgroundColor: currentColors.card}]}>
+          <Text style={[styles.titleText, {color: currentColors.text}]}>{title}</Text>
+          <Text style={[styles.contentText, {color: currentColors.text}]}>{content}</Text>
           {entry.media && entry.media.length > 0 && (
             <View style={styles.mediaContainer}>
-              {entry.media.map((item, index) => renderMedia(item, index))}
+              {entry.media.map((item, index) => {
+                if (item.type.startsWith('image')) {
+                  return (
+                    <Image
+                      key={index}
+                      source={{uri: item.uri}}
+                      style={[styles.mediaPreview, {backgroundColor: currentColors.mediaBg}]}
+                      resizeMode="cover"
+                    />
+                  );
+                } else if (item.type.startsWith('video')) {
+                  return (
+                    <Video
+                      key={index}
+                      source={{uri: item.uri}}
+                      style={[styles.mediaPreview, {backgroundColor: currentColors.mediaBg}]}
+                      resizeMode="cover"
+                      controls={true}
+                    />
+                  );
+                } else {
+                  return (
+                    <TouchableOpacity
+                      key={index}
+                      style={[styles.audioContainer, {backgroundColor: currentColors.mediaBg}]}
+                      onPress={() => playAudio(item.uri)}>
+                      <Icon
+                        name={isPlaying ? 'pause-circle-filled' : 'play-circle-filled'}
+                        size={40}
+                        color={currentColors.audioIcon}
+                      />
+                      <Text style={[styles.audioTime, {color: currentColors.text}]}>
+                        {isPlaying ? playTime : duration}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+              })}
             </View>
           )}
         </View>
@@ -281,96 +150,102 @@ const ViewEntryScreen = ({navigation, route}) => {
   );
 };
 
-// Add these to the StyleSheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: wp(2),
+  },
+  editDeleteContainer: {
+    flexDirection: 'row',
   },
   headerButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#5C4E4E',
-    marginRight: 10,
-  },
-  headerButtonText: {
-    color: '#6c63ff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    borderRadius: wp(4),
+    padding: wp(2),
+    marginLeft: wp(2),
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: wp(10),
+    height: wp(10),
   },
   deleteButton: {
-    // marginLeft: 8,
+    // Color will be set dynamically
   },
   dateContainer: {
-    padding: 16,
+    padding: wp(4),
+    marginBottom: hp(1),
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
   },
   dateText: {
-    color: '#000',
-    fontSize: 14,
+    fontSize: hp(1.8),
   },
   editContainer: {
-    padding: 16,
+    padding: wp(4),
+    borderRadius: wp(2),
+    margin: wp(4),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   viewContainer: {
-    padding: 16,
+    padding: wp(4),
+    borderRadius: wp(2),
+    margin: wp(4),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   titleInput: {
-    fontSize: 24,
+    fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
-    padding: 0,
+    marginBottom: hp(2),
+    paddingBottom: hp(1),
+    borderBottomWidth: 1,
   },
   contentInput: {
-    fontSize: 16,
-    color: '#fff',
-    lineHeight: 24,
-    minHeight: 200,
-    padding: 0,
-    paddingBottom: 15,
+    fontSize: hp(2),
+    lineHeight: hp(3),
+    minHeight: hp(30),
   },
   titleText: {
-    fontSize: 24,
+    fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 16,
+    marginBottom: hp(2),
   },
   contentText: {
-    fontSize: 16,
-    color: '#000',
-    lineHeight: 24,
+    fontSize: hp(2),
+    lineHeight: hp(3),
   },
   mediaContainer: {
-    marginTop: 16,
-    gap: 8,
+    marginTop: hp(2),
+    gap: hp(1),
   },
   mediaPreview: {
     width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    height: hp(25),
+    borderRadius: wp(2),
   },
   audioContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 5,
+    padding: wp(3),
+    borderRadius: wp(2),
+    marginVertical: hp(0.5),
   },
   audioTime: {
-    marginLeft: 10,
-    color: '#666',
-    fontSize: 14,
-  },
-  toolbarButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#5C4E4E',
+    marginLeft: wp(2),
+    fontSize: hp(1.8),
   },
 });
 

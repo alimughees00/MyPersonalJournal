@@ -10,6 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
+  Switch,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -21,11 +22,43 @@ import {
 
 const BUILD_NUMBER = '1.0.1';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
+// ... (other imports remain the same)
 
 const HomeScreen = ({navigation}) => {
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Color schemes
+  const colors = {
+    light: {
+      background: '#F8F5F5',
+      card: '#FFFFFF',
+      text: '#424242',
+      secondaryText: '#757575',
+      primary: '#5C4E4E',
+      header: '#5C4E4E',
+      emptyText: '#5C4E4E',
+      emptySubtext: '#757575',
+      footer: '#FFFFFF',
+      mediaBg: '#F0F0F0',
+    },
+    dark: {
+      background: '#121212',
+      card: '#1E1E1E',
+      text: '#E0E0E0',
+      secondaryText: '#A0A0A0',
+      primary: '#988686',
+      header: '#1E1E1E',
+      emptyText: '#988686',
+      emptySubtext: '#A0A0A0',
+      footer: '#1E1E1E',
+      mediaBg: '#2D2D2D',
+    }
+  };
+
+  const currentColors = isDarkMode ? colors.dark : colors.light;
 
   const loadEntries = async () => {
     try {
@@ -77,6 +110,8 @@ const HomeScreen = ({navigation}) => {
     };
   }, [navigation]);
 
+  // ... (other existing functions remain the same)
+
   const renderMediaPreview = media => {
     if (!media || media.length === 0) return null;
 
@@ -98,7 +133,7 @@ const HomeScreen = ({navigation}) => {
     } else if (firstMedia.type.startsWith('audio/')) {
       return (
         <View style={styles.mediaPreview}>
-          <Icon name="audiotrack" size={24} color="#fff" />
+          <Icon name="audiotrack" size={24} color="#666" />
         </View>
       );
     }
@@ -168,11 +203,18 @@ const HomeScreen = ({navigation}) => {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#988686" />
-      <View style={styles.header}>
-        <View></View>
-        <Text style={styles.headerTitle}>My Journal</Text>
+    <View style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={currentColors.header} />
+      <View style={[styles.header, {backgroundColor: currentColors.header}]}>
+        <View style={styles.modeToggleContainer}>
+          <Switch
+            value={isDarkMode}
+            onValueChange={setIsDarkMode}
+            trackColor={{false: '#767577', true: '#988686'}}
+            thumbColor={isDarkMode ? '#5C4E4E' : '#f4f3f4'}
+          />
+        </View>
+        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>My Journal</Text>
         <TouchableOpacity
           onPress={() => {
             auth.logout();
@@ -182,25 +224,64 @@ const HomeScreen = ({navigation}) => {
           <Icon name="logout" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
+
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#5C4E4E" />
+        <View style={[styles.loadingContainer, {backgroundColor: currentColors.background}]}>
+          <ActivityIndicator size="large" color={currentColors.primary} />
         </View>
       ) : (
         <FlatList
           data={entries}
           showsVerticalScrollIndicator={false}
-          renderItem={renderItem}
+          renderItem={({item}) => (
+            <TouchableOpacity
+              style={[styles.entryCard, {backgroundColor: currentColors.card}]}
+              onPress={() => navigation.navigate('ViewEntry', {entry: item, mode: isDarkMode})}>
+              <View style={styles.entryHeader}>
+                <Text style={[styles.entryDate, {color: currentColors.secondaryText}]}>
+                  {new Date(item.date).toLocaleDateString()}
+                </Text>
+                {item.expirationTime > 0 && (
+                  <View style={[styles.expirationBadge, {backgroundColor: currentColors.primary}]}>
+                    <Icon name="timer" size={14} color="#fff" />
+                    <Text style={styles.expirationText}>
+                      {getExpirationText(item.expirationTime)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {item.title && <Text style={[styles.entryTitle, {color: currentColors.text}]}>{item.title}</Text>}
+              {item.content && (
+                <Text style={[styles.entryPreview, {color: currentColors.secondaryText}]} numberOfLines={2}>
+                  {item.content}
+                </Text>
+              )}
+              {item.media && item.media.length > 0 && (
+                <View style={[styles.mediaContainer, {backgroundColor: currentColors.mediaBg}]}>
+                  {renderMediaPreview(item.media)}
+                  {item.media.length > 1 && (
+                    <Text style={styles.mediaCount}>+{item.media.length - 1}</Text>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={onRefresh}
+              colors={[currentColors.primary]}
+              tintColor={currentColors.primary}
+            />
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No entries yet</Text>
-              <Text style={styles.emptySubtext}>
-                Start writing your thoughts
+              <Icon name="book" size={48} color={currentColors.emptyText} />
+              <Text style={[styles.emptyText, {color: currentColors.emptyText}]}>No entries yet</Text>
+              <Text style={[styles.emptySubtext, {color: currentColors.emptySubtext}]}>
+                Tap the + button to create your first entry
               </Text>
             </View>
           }
@@ -208,14 +289,15 @@ const HomeScreen = ({navigation}) => {
       )}
 
       <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('NewEntry')}>
+        style={[styles.fab, {backgroundColor: currentColors.primary}]}
+        onPress={() => navigation.navigate('NewEntry',{mode: isDarkMode})}>
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
-      <View style={styles.footer}>
-        <Text style={styles.buildNumber}>Build {BUILD_NUMBER}</Text>
+
+      <View style={[styles.footer, {backgroundColor: currentColors.footer}]}>
+        <Text style={[styles.buildNumber, {color: currentColors.secondaryText}]}>Build {BUILD_NUMBER}</Text>
         <TouchableOpacity onPress={handleFeedbackPress}>
-          <Text style={styles.feedbackLink}>{FEEDBACK_EMAIL}</Text>
+          <Text style={[styles.feedbackLink, {color: currentColors.primary}]}>Send Feedback</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -225,147 +307,148 @@ const HomeScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: hp(2),
-    paddingHorizontal: wp(8),
-    backgroundColor: '#988686',
-    borderBottomWidth: hp(0.15),
-    borderBottomColor: '#5C4E4E',
+    paddingHorizontal: wp(5),
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  modeToggleContainer: {
+    marginRight: wp(2),
+  },
+  headerSpacer: {
+    width: wp(12), // Adjusted to accommodate the toggle switch
+  },
+  headerTitle: {
+    fontSize: hp(3),
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    padding: wp(1),
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    paddingLeft: wp(10),
-    fontSize: hp(3.3),
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  logoutButton: {
-    // padding: 8,
-  },
   listContainer: {
     paddingVertical: hp(2),
     paddingHorizontal: wp(5),
   },
   entryCard: {
-    backgroundColor: '#baabab',
-    borderRadius: wp(3),
-    paddingVertical: hp(2),
-    paddingHorizontal: wp(5),
+    borderRadius: wp(2),
+    padding: wp(4),
     marginBottom: hp(2),
-    elevation: 4,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: hp(1),
   },
   entryDate: {
-    color: '#fff',
     fontSize: hp(1.8),
   },
   expirationBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#5C4E4E',
     borderRadius: wp(4),
     paddingHorizontal: wp(2),
-    paddingVertical: hp(0.7),
+    paddingVertical: hp(0.5),
   },
   expirationText: {
     color: '#fff',
-    fontSize: hp(1.5),
+    fontSize: hp(1.4),
     marginLeft: wp(1),
   },
   entryTitle: {
-    fontSize: hp(2.5),
+    fontSize: hp(2.2),
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: hp(0.6),
+    marginBottom: hp(0.5),
   },
   entryPreview: {
-    color: '#fff',
     fontSize: hp(1.9),
     marginBottom: hp(1),
   },
   mediaContainer: {
     position: 'relative',
-    width: wp(10),
-    height: hp(5),
-    borderRadius: wp(3),
+    width: wp(20),
+    height: hp(10),
+    borderRadius: wp(2),
     overflow: 'hidden',
-    backgroundColor: '#5C4E4E',
     justifyContent: 'center',
     alignItems: 'center',
-    alignContent: 'center',
-    marginRight: wp(4),
+    marginTop: hp(1),
   },
   mediaPreview: {
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    // alignContent: 'center',
+    width: '100%',
+    height: '100%',
   },
   mediaCount: {
     position: 'absolute',
-    bottom: 25,
-    right: -15,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    bottom: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     color: '#fff',
-    fontSize: 12,
-    paddingHorizontal: 4,
+    fontSize: hp(1.4),
+    paddingHorizontal: wp(1.5),
     borderRadius: wp(5),
   },
   fab: {
     position: 'absolute',
     right: wp(8),
     bottom: hp(12),
-    backgroundColor: '#5C4E4E',
     width: wp(16),
-    height: hp(7.7),
+    height: wp(16),
     borderRadius: wp(8),
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   emptyContainer: {
     flex: 1,
-    alignItems: 'center',
-    alignContent: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    padding: wp(10),
   },
   emptyText: {
-    fontSize: 20,
-    color: '#fff',
-    marginBottom: 8,
+    fontSize: hp(2.5),
+    fontWeight: 'bold',
+    marginTop: hp(2),
   },
   emptySubtext: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: hp(1.9),
+    textAlign: 'center',
+    marginTop: hp(1),
   },
   footer: {
-    paddingVertical: hp(2),
+    paddingVertical: hp(1.5),
     paddingHorizontal: wp(5),
     alignItems: 'center',
-    backgroundColor: '#988686',
-    borderTopWidth: hp(0.15),
-    borderTopColor: '#5C4E4E',
+    borderTopWidth: 1,
+    borderTopColor: '#2D2D2D',
   },
   buildNumber: {
-    fontSize: hp(1.8),
-    color: '#000',
-    marginBottom: hp(0.3),
+    fontSize: hp(1.6),
+    marginBottom: hp(0.5),
   },
   feedbackLink: {
-    fontSize: hp(1.8),
-    color: '#000',
+    fontSize: hp(1.6),
     textDecorationLine: 'underline',
   },
 });

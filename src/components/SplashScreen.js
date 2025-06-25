@@ -1,58 +1,70 @@
 import React, { useEffect } from 'react';
-import { View, Image, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const SplashScreen = ({ onFinish }) => {
   const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(-40);
+  const scaleAnim = new Animated.Value(0.8);
+  const textAnim = new Animated.Value(hp(5));
 
   useEffect(() => {
     Animated.parallel([
-      // Icon animation
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.delay(1000),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Text animation
-      Animated.sequence([
-        Animated.delay(500), // Delay text animation start
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.timing(textAnim, {
+        toValue: 0,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
     ]).start(() => {
-      onFinish();
+      setTimeout(onFinish, 1000);
     });
   }, []);
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.iconContainer, { opacity: fadeAnim }]}>
-        <Image
-          source={require('../assets/logo.png')}
-          style={styles.icon}
-          resizeMode="contain"
-        />
+      <Animated.View 
+        style={[
+          styles.iconContainer, 
+          { 
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }]
+          }
+        ]}
+      >
+        <Icon name="book" size={hp(15)} color="#FFFFFF" />
       </Animated.View>
       <Animated.Text
         style={[
           styles.text,
           {
             opacity: fadeAnim,
-            transform: [{ translateX: slideAnim }],
+            transform: [{ translateY: textAnim }],
           },
         ]}>
-        Your Mind's Quiet Space
+        My Journal
+      </Animated.Text>
+      <Animated.Text
+        style={[
+          styles.subtext,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: textAnim }],
+          },
+        ]}>
+        Your personal space for thoughts
       </Animated.Text>
     </View>
   );
@@ -61,24 +73,23 @@ const SplashScreen = ({ onFinish }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
+    backgroundColor: '#5C4E4E',
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconContainer: {
-    width: 250,
-    height: 250,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  icon: {
-    width: '100%',
-    height: '100%',
+    marginBottom: hp(2),
   },
   text: {
-    fontSize: 24,
-    color: '#333',
-    fontWeight: '500',
+    fontSize: hp(4),
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    marginBottom: hp(1),
+  },
+  subtext: {
+    fontSize: hp(2.2),
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
 });
 

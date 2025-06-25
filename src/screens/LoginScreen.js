@@ -54,7 +54,7 @@ const LoginScreen = ({navigation}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
         
-      <StatusBar barStyle="dark-content" backgroundColor="#988686" />
+      <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
       <View style={styles.innerContainer}>
         <View style={styles.headerContainer}>
           <Image
@@ -69,20 +69,22 @@ const LoginScreen = ({navigation}) => {
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
+              <Icon name="user" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Username"
-                placeholderTextColor="#fff"
+                placeholderTextColor="#9E9E9E"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
               />
             </View>
-            <View style={styles.passwordContainer}>
+            <View style={styles.inputWrapper}>
+              <Icon name="lock" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
               <TextInput
-                style={styles.passwordInput}
+                style={styles.input}
                 placeholder="Password"
-                placeholderTextColor="#fff"
+                placeholderTextColor="#9E9E9E"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -92,21 +94,21 @@ const LoginScreen = ({navigation}) => {
                 onPress={() => setShowPassword(!showPassword)}>
                 <Icon
                   name={showPassword ? 'eye' : 'eye-slash'}
-                  size={15}
-                  color={showPassword ? '#5C4E4E' : '#fff'}
+                  size={hp(2.5)}
+                  color="#5C4E4E"
                 />
-                +41774755214
               </TouchableOpacity>
             </View>
             {showSecurityQuestion && (
               <View style={styles.inputWrapper}>
+                <Icon name="shield-alt" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
                 <Text style={styles.securityQuestion}>
                   What is your favorite childhood pet's name?
                 </Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Enter security answer"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#9E9E9E"
                   value={securityAnswer}
                   onChangeText={setSecurityAnswer}
                   autoCapitalize="none"
@@ -137,90 +139,100 @@ const LoginScreen = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
+    backgroundColor: '#F8F5F5',
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
+    paddingHorizontal: wp(8),
   },
   headerContainer: {
     alignItems: 'center',
+    marginBottom: hp(5),
   },
   icon: {
-    width: wp(40),
-    height: hp(18),
+    width: wp(30),
+    height: hp(15),
+    tintColor: '#5C4E4E',
   },
   title: {
-    fontSize: hp(4.7),
+    fontSize: hp(4),
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: hp(2),
+    color: '#5C4E4E',
+    marginBottom: hp(1),
   },
   subtitle: {
-    fontSize: hp(2.5),
-    color: '#fff',
+    fontSize: hp(2),
+    color: '#757575',
     textAlign: 'center',
-    lineHeight: hp(4),
+    lineHeight: hp(3),
   },
   formContainer: {
-    paddingVertical: hp(6),
-    paddingHorizontal: wp(10),
+    backgroundColor: '#FFFFFF',
+    borderRadius: wp(4),
+    paddingVertical: hp(4),
+    paddingHorizontal: wp(6),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  inputContainer: {
+    marginBottom: hp(2),
   },
   inputWrapper: {
-    borderColor: '#5C4E4E',
-    borderBottomWidth: hp(0.3),
-  },
-  input: {
-    fontSize: hp(2.4),
-    color: '#2d3436',
-  },
-  passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderColor: '#5C4E4E',
-    borderBottomWidth: hp(0.3),
-    marginVertical: hp(1),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    marginBottom: hp(2),
+    paddingBottom: hp(1),
   },
-  passwordInput: {
+  inputIcon: {
+    marginRight: wp(3),
+  },
+  input: {
     flex: 1,
-    fontSize: hp(2.4),
-    color: '#2d3436',
+    fontSize: hp(2),
+    color: '#424242',
+    paddingVertical: hp(1),
   },
   eyeIcon: {
-    paddingHorizontal: wp(5),
+    paddingLeft: wp(3),
   },
   button: {
-    marginTop: hp(5),
     backgroundColor: '#5C4E4E',
-    paddingVertical: hp(2),
-    borderRadius: wp(3),
+    paddingVertical: hp(1.8),
+    borderRadius: wp(2),
+    marginTop: hp(2),
     alignItems: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: hp(2.7),
+    fontSize: hp(2.2),
     fontWeight: 'bold',
   },
   errorText: {
-    color: '#C70039',
-    marginTop: hp(1.5),
+    color: '#D32F2F',
+    marginTop: hp(1),
     textAlign: 'center',
-    fontSize: hp(2),
+    fontSize: hp(1.8),
   },
   forgotPassword: {
-    marginTop: hp(3),
+    marginTop: hp(2),
     alignItems: 'center',
   },
   forgotPasswordText: {
-    color: '#fff',
-    fontSize: hp(2),
+    color: '#5C4E4E',
+    fontSize: hp(1.8),
+    textDecorationLine: 'underline',
   },
   securityQuestion: {
-    fontSize: 14,
-    color: '#636e72',
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    fontSize: hp(1.8),
+    color: '#757575',
+    marginBottom: hp(1),
+    paddingHorizontal: wp(2),
   },
 });
 

@@ -8,17 +8,27 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { auth } from '../utils/auth';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [error, setError] = useState('');
 
   const handleRecovery = async () => {
+    if (!securityAnswer.trim()) {
+      setError('Please enter your security answer');
+      return;
+    }
+
     const credentials = await auth.getCredentialsWithSecurity(securityAnswer);
     if (credentials) {
-      // Show credentials to user
       Alert.alert(
         'Your Credentials',
         `Username: ${credentials.username}\nPassword: ${credentials.password}`,
@@ -38,10 +48,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
       <View style={styles.innerContainer}>
         <View style={styles.headerContainer}>
+          <Icon name="lock-reset" size={hp(8)} color="#FFFFFF" style={styles.icon} />
           <Text style={styles.title}>Account Recovery</Text>
-          <Text style={styles.subtitle}>Recover your journal access</Text>
+          <Text style={styles.subtitle}>Answer your security question to recover access</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -50,10 +62,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
               What is your favorite childhood pet's name?
             </Text>
             <View style={styles.inputWrapper}>
+              <Icon name="pets" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your answer"
-                placeholderTextColor="#fff"
+                placeholderTextColor="#9E9E9E"
                 value={securityAnswer}
                 onChangeText={setSecurityAnswer}
                 autoCapitalize="none"
@@ -62,13 +75,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleRecovery}>
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleRecovery}
+            activeOpacity={0.8}>
             <Text style={styles.buttonText}>Recover Account</Text>
+            <Icon name="arrow-forward" size={hp(2.5)} color="#FFFFFF" style={styles.buttonIcon} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}>
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.6}>
+            <Icon name="arrow-back" size={hp(2.5)} color="#5C4E4E" />
             <Text style={styles.backButtonText}>Back to Login</Text>
           </TouchableOpacity>
         </View>
@@ -80,97 +99,103 @@ const ForgotPasswordScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
+    backgroundColor: '#F8F5F5',
   },
   innerContainer: {
     flex: 1,
     justifyContent: 'center',
-    // padding: 24,
+    paddingHorizontal: wp(8),
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: hp(6),
+  },
+  icon: {
+    marginBottom: hp(2),
   },
   title: {
-    fontSize: 36,
+    fontSize: hp(3.5),
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
+    color: '#5C4E4E',
+    marginBottom: hp(1),
   },
   subtitle: {
-    fontSize: 18,
-    color: '#fff',
+    fontSize: hp(2),
+    color: '#757575',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: hp(3),
+    paddingHorizontal: wp(10),
   },
   formContainer: {
-    // backgroundColor: 'white',
-    // borderRadius: 20,
-    padding: 24,
-    // shadowColor: '#000',
-    // shadowOffset: {
-    //   width: 0,
-    //   height: 4,
-    // },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 12,
-    // elevation: 5,
+    backgroundColor: '#FFFFFF',
+    borderRadius: wp(4),
+    padding: wp(6),
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   inputContainer: {
-    marginBottom: 24,
+    marginBottom: hp(4),
   },
   question: {
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 16,
+    fontSize: hp(2),
+    color: '#424242',
+    marginBottom: hp(2),
     textAlign: 'center',
     fontWeight: '500',
   },
   inputWrapper: {
-    // backgroundColor: '#f8f9fa',
-    // borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderBottomWidth: 1,
-    borderColor: '#5C4E4E',
-    marginVertical: 50,
+    borderBottomColor: '#E0E0E0',
+    paddingBottom: hp(1),
+  },
+  inputIcon: {
+    marginRight: wp(3),
   },
   input: {
-    padding: 16,
-    fontSize: 16,
-    color: '#2d3436',
+    flex: 1,
+    fontSize: hp(2),
+    color: '#424242',
+    paddingVertical: hp(1),
   },
   button: {
-    backgroundColor: '#5C4E4E',
-    padding: 18,
-    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#988686',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: '#5C4E4E',
+    paddingVertical: hp(2),
+    borderRadius: wp(2),
+    elevation: 2,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: hp(2.2),
+    fontWeight: 'bold',
+  },
+  buttonIcon: {
+    marginLeft: wp(2),
   },
   backButton: {
-    marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
+    marginTop: hp(3),
   },
   backButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#5C4E4E',
+    fontSize: hp(1.9),
     fontWeight: '500',
+    marginLeft: wp(2),
   },
   errorText: {
-    color: '#ff6b6b',
-    marginTop: 8,
+    color: '#D32F2F',
+    marginTop: hp(1),
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: hp(1.8),
   },
 });
 
