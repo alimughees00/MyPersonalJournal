@@ -14,7 +14,7 @@ import {
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+} from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -56,97 +56,263 @@ const ViewEntryScreen = ({navigation, route}) => {
       mediaBg: '#2D2D2D',
       audioIcon: '#988686',
       deleteButton: '#B71C1C',
-    }
+    },
   };
 
   const currentColors = mode ? colors.dark : colors.light;
 
   const audioPlayer = useRef(new AudioRecorderPlayer());
 
-  // ... (keep all your existing functions unchanged)
+  const handleBackPress = () => {
+    if (isEditing && (title !== entry.title || content !== entry.content)) {
+      Alert.alert(
+        'Discard Changes',
+        'You have unsaved changes. Are you sure you want to go back?',
+        [
+          {text: 'Cancel', style: 'cancel'},
+          {
+            text: 'Discard',
+            onPress: () => navigation.goBack(),
+            style: 'destructive',
+          },
+        ],
+      );
+      return true;
+    }
+    navigation.goBack();
+    return true;
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress,
+    );
+    return () => backHandler.remove();
+  }, [isEditing, title, content]);
+
+  const saveChanges = async () => {
+    try {
+      const updatedEntry = {
+        ...entry,
+        title: title.trim(),
+        content: content.trim(),
+      };
+      await storage.updateEntry(updatedEntry);
+      setIsEditing(false);
+      Alert.alert('Success', 'Entry updated successfully');
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      Alert.alert('Error', 'Failed to update entry');
+    }
+  };
+
+  const deleteEntry = async () => {
+    Alert.alert('Delete Entry', 'Are you sure you want to delete this entry?', [
+      {text: 'Cancel', style: 'cancel'},
+      {
+        text: 'Delete',
+        onPress: async () => {
+          try {
+            await storage.deleteEntry(entry.id);
+            navigation.navigate('Home', {refresh: true});
+          } catch (error) {
+            console.error('Error deleting entry:', error);
+            Alert.alert('Error', 'Failed to delete entry');
+          }
+        },
+        style: 'destructive',
+      },
+    ]);
+  };
+
+  const playAudio = async uri => {
+    try {
+      if (isPlaying) {
+        await audioPlayer.current.stopPlayer();
+        setIsPlaying(false);
+      } else {
+        await audioPlayer.current.startPlayer(uri);
+        audioPlayer.current.addPlayBackListener(e => {
+          if (e.currentPosition === e.duration) {
+            setIsPlaying(false);
+          } else {
+            setPlayTime(
+              audioPlayer.current.mmssss(Math.floor(e.currentPosition)),
+            );
+            setDuration(audioPlayer.current.mmssss(Math.floor(e.duration)));
+          }
+        });
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+    }
+  };
 
   return (
-    <ScrollView style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar barStyle={mode ? 'light-content' : 'dark-content'} backgroundColor={currentColors.header} />
-      <View style={[styles.dateContainer, {backgroundColor: currentColors.card}]}>
-        <Text style={[styles.dateText, {color: currentColors.secondaryText}]}>
-          {new Date(entry.date).toLocaleDateString()} at{' '}
-          {new Date(entry.date).toLocaleTimeString()}
+    <View
+      style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar
+        barStyle={mode ? 'light-content' : 'dark-content'}
+        backgroundColor={currentColors.header}
+      />
+
+      {/* Updated Header to match NewEntryScreen */}
+      <View style={[styles.header, {backgroundColor: currentColors.header}]}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+          <Icon name="arrow-back" size={hp(3)} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>
+          {isEditing ? 'Edit Entry' : 'View Entry'}
         </Text>
+        {isEditing ? (
+          <TouchableOpacity
+            style={[styles.saveButton, {backgroundColor: '#FFFFFF'}]}
+            onPress={saveChanges}>
+            <Text
+              style={[styles.saveButtonText, {color: currentColors.primary}]}>
+              Save
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {backgroundColor: mode ? currentColors.primary : "#988686"},
+              ]}
+              onPress={() => setIsEditing(true)}>
+              <Icon name="edit" size={hp(2.5)} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {backgroundColor: currentColors.deleteButton},
+              ]}
+              onPress={deleteEntry}>
+              <Icon name="delete" size={hp(2.5)} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
-      {isEditing ? (
-        <View style={[styles.editContainer, {backgroundColor: currentColors.card}]}>
-          <TextInput
-            style={[styles.titleInput, {
-              color: currentColors.text,
-              borderBottomColor: currentColors.secondaryText
-            }]}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-            placeholderTextColor={currentColors.secondaryText}
-            maxLength={100}
-          />
-          <TextInput
-            style={[styles.contentInput, {color: currentColors.text}]}
-            value={content}
-            onChangeText={setContent}
-            placeholder="Write your thoughts..."
-            placeholderTextColor={currentColors.secondaryText}
-            multiline
-            textAlignVertical="top"
-          />
+      <ScrollView style={styles.scrollContainer}>
+        <View
+          style={[styles.dateContainer, {backgroundColor: currentColors.card}]}>
+          <Text style={[styles.dateText, {color: currentColors.secondaryText}]}>
+            {new Date(entry.date).toLocaleDateString()} at{' '}
+            {new Date(entry.date).toLocaleTimeString()}
+          </Text>
         </View>
-      ) : (
-        <View style={[styles.viewContainer, {backgroundColor: currentColors.card}]}>
-          <Text style={[styles.titleText, {color: currentColors.text}]}>{title}</Text>
-          <Text style={[styles.contentText, {color: currentColors.text}]}>{content}</Text>
-          {entry.media && entry.media.length > 0 && (
-            <View style={styles.mediaContainer}>
-              {entry.media.map((item, index) => {
-                if (item.type.startsWith('image')) {
-                  return (
-                    <Image
-                      key={index}
-                      source={{uri: item.uri}}
-                      style={[styles.mediaPreview, {backgroundColor: currentColors.mediaBg}]}
-                      resizeMode="cover"
-                    />
-                  );
-                } else if (item.type.startsWith('video')) {
-                  return (
-                    <Video
-                      key={index}
-                      source={{uri: item.uri}}
-                      style={[styles.mediaPreview, {backgroundColor: currentColors.mediaBg}]}
-                      resizeMode="cover"
-                      controls={true}
-                    />
-                  );
-                } else {
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[styles.audioContainer, {backgroundColor: currentColors.mediaBg}]}
-                      onPress={() => playAudio(item.uri)}>
-                      <Icon
-                        name={isPlaying ? 'pause-circle-filled' : 'play-circle-filled'}
-                        size={40}
-                        color={currentColors.audioIcon}
+
+        {isEditing ? (
+          <View
+            style={[
+              styles.editContainer,
+              {backgroundColor: currentColors.card},
+            ]}>
+            <TextInput
+              style={[
+                styles.titleInput,
+                {
+                  color: currentColors.text,
+                  borderBottomColor: currentColors.secondaryText,
+                },
+              ]}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Title"
+              placeholderTextColor={currentColors.secondaryText}
+              maxLength={100}
+              cursorColor={mode ? '#fff' : '#000'}
+            />
+            <TextInput
+              style={[styles.contentInput, {color: currentColors.text}]}
+              value={content}
+              onChangeText={setContent}
+              placeholder="Write your thoughts..."
+              placeholderTextColor={currentColors.secondaryText}
+              multiline
+              textAlignVertical="top"
+              cursorColor={mode ? '#fff' : '#000'}
+            />
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.viewContainer,
+              {backgroundColor: currentColors.card},
+            ]}>
+            <Text style={[styles.titleText, {color: currentColors.text}]}>
+              {title}
+            </Text>
+            <Text style={[styles.contentText, {color: currentColors.text}]}>
+              {content}
+            </Text>
+            {entry.media && entry.media.length > 0 && (
+              <View style={styles.mediaContainer}>
+                {entry.media.map((item, index) => {
+                  if (item.type.startsWith('image')) {
+                    return (
+                      <Image
+                        key={index}
+                        source={{uri: item.uri}}
+                        style={[
+                          styles.mediaPreview,
+                          {backgroundColor: currentColors.mediaBg},
+                        ]}
+                        resizeMode="cover"
                       />
-                      <Text style={[styles.audioTime, {color: currentColors.text}]}>
-                        {isPlaying ? playTime : duration}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }
-              })}
-            </View>
-          )}
-        </View>
-      )}
-    </ScrollView>
+                    );
+                  } else if (item.type.startsWith('video')) {
+                    return (
+                      <Video
+                        key={index}
+                        source={{uri: item.uri}}
+                        style={[
+                          styles.mediaPreview,
+                          {backgroundColor: currentColors.mediaBg},
+                        ]}
+                        resizeMode="cover"
+                        controls={true}
+                      />
+                    );
+                  } else {
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.audioContainer,
+                          {backgroundColor: currentColors.mediaBg},
+                        ]}
+                        onPress={() => playAudio(item.uri)}>
+                        <Icon
+                          name={
+                            isPlaying
+                              ? 'pause-circle-filled'
+                              : 'play-circle-filled'
+                          }
+                          size={40}
+                          color={currentColors.audioIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.audioTime,
+                            {color: currentColors.text},
+                          ]}>
+                          {isPlaying ? playTime : duration}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                })}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 };
 
@@ -154,13 +320,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContainer: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: hp(2),
+    paddingHorizontal: wp(5),
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerTitle: {
+    fontSize: hp(2.5),
+    fontWeight: 'bold',
+  },
+  backButton: {
+    padding: wp(1),
+  },
+  saveButton: {
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1),
+    borderRadius: wp(2),
+  },
+  saveButtonText: {
+    fontSize: hp(1.8),
+    fontWeight: 'bold',
+  },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: wp(2),
-  },
-  editDeleteContainer: {
-    flexDirection: 'row',
   },
   headerButton: {
     borderRadius: wp(4),
@@ -170,9 +363,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: wp(10),
     height: wp(10),
-  },
-  deleteButton: {
-    // Color will be set dynamically
   },
   dateContainer: {
     padding: wp(4),

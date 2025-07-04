@@ -9,13 +9,14 @@ import {
   Platform,
   Image,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+} from 'react-native-responsive-screen';
 
 const LoginScreen = ({navigation}) => {
   const [username, setUsername] = useState('');
@@ -50,89 +51,109 @@ const LoginScreen = ({navigation}) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
-        
-      <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
-      <View style={styles.innerContainer}>
-        <View style={styles.headerContainer}>
-          <Image
-            source={require('../assets/logo.png')}
-            style={styles.icon}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>My Journal</Text>
-          <Text style={styles.subtitle}>Your personal space for thoughts</Text>
-        </View>
+    <ScrollView>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
+        <View style={styles.innerContainer}>
+          <View style={styles.headerContainer}>
+            <Image
+              source={require('../assets/logo.png')}
+              style={styles.icon}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>My Journal</Text>
+            <Text style={styles.subtitle}>
+              Your personal space for thoughts
+            </Text>
+          </View>
 
-        <View style={styles.formContainer}>
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Icon name="user" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor="#9E9E9E"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-              />
-            </View>
-            <View style={styles.inputWrapper}>
-              <Icon name="lock" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#9E9E9E"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}>
+          <View style={styles.formContainer}>
+            <View style={styles.inputContainer}>
+              <View style={styles.inputWrapper}>
                 <Icon
-                  name={showPassword ? 'eye' : 'eye-slash'}
+                  name="user"
                   size={hp(2.5)}
                   color="#5C4E4E"
+                  style={styles.inputIcon}
                 />
-              </TouchableOpacity>
-            </View>
-            {showSecurityQuestion && (
-              <View style={styles.inputWrapper}>
-                <Icon name="shield-alt" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
-                <Text style={styles.securityQuestion}>
-                  What is your favorite childhood pet's name?
-                </Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter security answer"
+                  placeholder="Username"
                   placeholderTextColor="#9E9E9E"
-                  value={securityAnswer}
-                  onChangeText={setSecurityAnswer}
+                  value={username}
+                  onChangeText={setUsername}
                   autoCapitalize="none"
                 />
               </View>
-            )}
+              <View style={styles.inputWrapper}>
+                <Icon
+                  name="lock"
+                  size={hp(2.5)}
+                  color="#5C4E4E"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#9E9E9E"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}>
+                  <Icon
+                    name={showPassword ? 'eye' : 'eye-slash'}
+                    size={hp(2.5)}
+                    color="#5C4E4E"
+                  />
+                </TouchableOpacity>
+              </View>
+              {showSecurityQuestion && (
+                <>
+                  <View style={styles.inputWrapper}>
+                    <Icon
+                      name="shield-alt"
+                      size={hp(2.5)}
+                      color="#5C4E4E"
+                      style={styles.inputIcon}
+                    />
+                    <Text style={styles.securityQuestion}>
+                      What is your favorite childhood pet's name?
+                    </Text>
+                  </View>
+                  <TextInput
+                    style={styles.inputWrapper}
+                    placeholder="Enter security answer"
+                    placeholderTextColor="#9E9E9E"
+                    value={securityAnswer}
+                    onChangeText={setSecurityAnswer}
+                    autoCapitalize="none"
+                  />
+                </>
+              )}
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+              <Text style={styles.buttonText}>Sign In</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotPasswordText}>
+                Forgot Username/Password?
+              </Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotPasswordText}>
-              Forgot Username/Password?
-            </Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScrollView>
   );
 };
 
@@ -148,18 +169,19 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: hp(5),
+    marginBottom: hp(2),
   },
   icon: {
     width: wp(30),
     height: hp(15),
     tintColor: '#5C4E4E',
+    marginTop: hp(13),
   },
   title: {
     fontSize: hp(4),
     fontWeight: 'bold',
     color: '#5C4E4E',
-    marginBottom: hp(1),
+    marginBottom: hp(0),
   },
   subtitle: {
     fontSize: hp(2),
@@ -174,7 +196,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(6),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
