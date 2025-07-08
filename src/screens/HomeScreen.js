@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Image,
   Switch,
+  AppState,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -29,6 +30,9 @@ const HomeScreen = ({navigation}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isUserActive, setIsUserActive] = useState(true);
+  const appState = useRef(AppState.currentState);
+  const isMounted = useRef(true);
 
   // Color schemes
   const colors = {
@@ -41,7 +45,7 @@ const HomeScreen = ({navigation}) => {
       header: '#5C4E4E',
       emptyText: '#5C4E4E',
       emptySubtext: '#757575',
-      footer: '#FFFFFF',
+      footer: '#F8F5F5',
       mediaBg: '#F0F0F0',
     },
     dark: {
@@ -58,11 +62,68 @@ const HomeScreen = ({navigation}) => {
     }
   };
 
-  const currentColors = isDarkMode ? colors.dark : colors.light;
+  useEffect(() => {
+    isMounted.current = true;
+    
+    // Load initial entries
+    loadEntries();
+
+    // Set up navigation focus listener
+    const focusSubscription = navigation.addListener('focus', e => {
+      auth.updateActivity();
+      if (!e.data?.state?.params?.skipRefresh) {
+        loadEntries();
+      }
+      setIsUserActive(true);
+    });
+
+    // Set up navigation blur listener (when user navigates away)
+    const blurSubscription = navigation.addListener('blur', () => {
+      setIsUserActive(false);
+    });
+
+    // Set up app state listener
+    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App came to foreground
+        loadEntries();
+        setIsUserActive(true);
+      } else if (nextAppState.match(/inactive|background/)) {
+        // App went to background
+        setIsUserActive(false);
+      }
+      appState.current = nextAppState;
+    });
+
+    // Session check interval
+    const sessionInterval = setInterval(() => {
+      if (auth.isSessionExpired()) {
+        auth.logout();
+        navigation.replace('Login');
+      }
+    }, 60000);
+
+    // Auto-refresh interval (1 minute)
+    const refreshInterval = setInterval(() => {
+      if (isUserActive && isMounted.current) {
+        loadEntries();
+      }
+    }, 60000);
+
+    return () => {
+      isMounted.current = false;
+      clearInterval(sessionInterval);
+      clearInterval(refreshInterval);
+      focusSubscription();
+      blurSubscription();
+      appStateSubscription.remove();
+    };
+  }, [navigation, isUserActive]);
 
   const loadEntries = async () => {
     try {
-      setIsLoading(true);
+      if (!isMounted.current) return;
+      
       const loadedEntries = await storage.getEntries();
       // Sort entries by date in descending order (newest first)
       const sortedEntries = loadedEntries.sort(
@@ -72,9 +133,13 @@ const HomeScreen = ({navigation}) => {
     } catch (error) {
       console.error('Error loading entries:', error);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
+
+  const currentColors = isDarkMode ? colors.dark : colors.light;
 
   useEffect(() => {
     loadEntries();
@@ -140,39 +205,39 @@ const HomeScreen = ({navigation}) => {
     return null;
   };
 
-  const renderItem = ({item}) => (
-    <TouchableOpacity
-      style={styles.entryCard}
-      onPress={() => navigation.navigate('ViewEntry', {entry: item})}>
-      <View style={styles.entryHeader}>
-        <Text style={styles.entryDate}>
-          {new Date(item.date).toLocaleDateString()}
-        </Text>
-        {item.expirationTime > 0 && (
-          <View style={styles.expirationBadge}>
-            <Icon name="timer" size={14} color="#fff" />
-            <Text style={styles.expirationText}>
-              {getExpirationText(item.expirationTime)}
-            </Text>
-          </View>
-        )}
-      </View>
-      {item.title ? <Text style={styles.entryTitle}>{item.title}</Text> : null}
-      {item.content ? (
-        <Text style={styles.entryPreview} numberOfLines={2}>
-          {item.content}
-        </Text>
-      ) : null}
-      {item.media && item.media.length > 0 && (
-        <View style={styles.mediaContainer}>
-          {renderMediaPreview(item.media)}
-          {item.media.length > 1 && (
-            <Text style={styles.mediaCount}>+{item.media.length - 1}</Text>
-          )}
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  // const renderItem = ({item}) => (
+  //   <TouchableOpacity
+  //     style={styles.entryCard}
+  //     onPress={() => navigation.navigate('ViewEntry', {entry: item})}>
+  //     <View style={styles.entryHeader}>
+  //       <Text style={styles.entryDate}>
+  //         {new Date(item.date).toLocaleDateString()}
+  //       </Text>
+  //       {item.expirationTime > 0 && (
+  //         <View style={styles.expirationBadge}>
+  //           <Icon name="timer" size={14} color="#fff" />
+  //           <Text style={styles.expirationText}>
+  //             {getExpirationText(item.expirationTime)}
+  //           </Text>
+  //         </View>
+  //       )}
+  //     </View>
+  //     {item.title ? <Text style={styles.entryTitle}>{item.title}</Text> : null}
+  //     {item.content ? (
+  //       <Text style={styles.entryPreview} numberOfLines={2}>
+  //         {item.content}
+  //       </Text>
+  //     ) : null}
+  //     {item.media && item.media.length > 0 && (
+  //       <View style={styles.mediaContainer}>
+  //         {renderMediaPreview(item.media)}
+  //         {item.media.length > 1 && (
+  //           <Text style={styles.mediaCount}>+{item.media.length - 1}</Text>
+  //         )}
+  //       </View>
+  //     )}
+  //   </TouchableOpacity>
+  // );
 
   const getExpirationText = expirationTime => {
     const now = new Date().getTime();
@@ -437,11 +502,13 @@ const styles = StyleSheet.create({
     marginTop: hp(1),
   },
   footer: {
+    flexDirection: 'row',
     paddingVertical: hp(1.5),
     paddingHorizontal: wp(5),
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#2D2D2D',
+    // borderTopWidth: 1,
+    // borderTopColor: '#2D2D2D',
+    justifyContent: 'space-between'
   },
   buildNumber: {
     fontSize: hp(1.6),
