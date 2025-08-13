@@ -57,15 +57,18 @@ const NewEntryScreen = ({navigation}) => {
       () => {
         if (title.trim() || content.trim() || media.length > 0) {
           saveEntry();
+          return true;
         }
-        return true;
+        // Allow default back navigation
+        return false;
       },
     );
 
     // Handle gesture back navigation
     const unsubscribe = navigation.addListener('beforeRemove', e => {
       if (!(title.trim() || content.trim() || media.length > 0)) {
-        return; // Allow back if no content
+        // Allow default navigation (do NOT prevent)
+        return;
       }
 
       // Prevent default behavior

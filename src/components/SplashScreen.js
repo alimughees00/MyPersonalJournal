@@ -1,7 +1,11 @@
-import React, { useEffect } from 'react';
-import { View, Image, StyleSheet, Animated } from 'react-native';
+import React, {useEffect} from 'react';
+import {View, Image, StyleSheet, Animated} from 'react-native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
-const SplashScreen = ({ onFinish }) => {
+const SplashScreen = ({onFinish}) => {
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(-40);
 
@@ -37,7 +41,7 @@ const SplashScreen = ({ onFinish }) => {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.iconContainer, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.iconContainer, {opacity: fadeAnim}]}>
         <Image
           source={require('../assets/logo.png')}
           style={styles.icon}
@@ -49,7 +53,7 @@ const SplashScreen = ({ onFinish }) => {
           styles.text,
           {
             opacity: fadeAnim,
-            transform: [{ translateX: slideAnim }],
+            transform: [{translateX: slideAnim}],
           },
         ]}>
         Your Mind's Quiet Space
@@ -77,7 +81,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 24,
-    color: '#333',
+    color: '#fff',
     fontWeight: '500',
   },
 });

@@ -61,8 +61,8 @@ const LoginScreen = ({navigation}) => {
             style={styles.icon}
             resizeMode="contain"
           />
-          <Text style={styles.title}>My Journal</Text>
-          <Text style={styles.subtitle}>Your personal space for thoughts</Text>
+          {/* <Text style={styles.title}>My Journal</Text> */}
+          <Text style={styles.subtitle}>Your personal space for thoughts.</Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -85,6 +85,7 @@ const LoginScreen = ({navigation}) => {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
@@ -94,7 +95,6 @@ const LoginScreen = ({navigation}) => {
                   size={15}
                   color={showPassword ? '#5C4E4E' : '#fff'}
                 />
-                +41774755214
               </TouchableOpacity>
             </View>
             {showSecurityQuestion && (
@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    width: wp(40),
-    height: hp(18),
+    width: wp(60),
+    height: wp(60),
   },
   title: {
     fontSize: hp(4.7),
@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
     fontSize: hp(2.5),
     color: '#fff',
     textAlign: 'center',
-    lineHeight: hp(4),
+    bottom: hp(2),
+    // lineHeight: hp(4),
   },
   formContainer: {
     paddingVertical: hp(6),
