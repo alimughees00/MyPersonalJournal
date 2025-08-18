@@ -19,7 +19,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const BUILD_NUMBER = '1.0.2';
+const BUILD_NUMBER = '1.0.5';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
 const HomeScreen = ({navigation}) => {

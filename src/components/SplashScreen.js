@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   text: {
-    fontSize: 24,
+    fontSize: wp(6),
     color: '#fff',
     fontWeight: '500',
   },

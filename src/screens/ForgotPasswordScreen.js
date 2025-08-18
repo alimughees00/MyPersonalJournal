@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,13 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { auth } from '../utils/auth';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {auth} from '../utils/auth';
 
-const ForgotPasswordScreen = ({ navigation }) => {
+const ForgotPasswordScreen = ({navigation}) => {
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [error, setError] = useState('');
 
@@ -27,7 +31,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             text: 'OK',
             onPress: () => navigation.navigate('Login'),
           },
-        ]
+        ],
       );
     } else {
       setError('Incorrect security answer');
@@ -89,24 +93,24 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: wp(10),
   },
   title: {
-    fontSize: 36,
+    fontSize: wp(9),
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 12,
+    marginBottom: hp(2),
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: wp(4),
     color: '#fff',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: hp(3),
   },
   formContainer: {
     // backgroundColor: 'white',
     // borderRadius: 20,
-    padding: 24,
+    padding: wp(5),
     // shadowColor: '#000',
     // shadowOffset: {
     //   width: 0,
@@ -117,12 +121,12 @@ const styles = StyleSheet.create({
     // elevation: 5,
   },
   inputContainer: {
-    marginBottom: 24,
+    marginBottom: hp(3),
   },
   question: {
-    fontSize: 16,
+    fontSize: wp(4),
     color: '#fff',
-    marginBottom: 16,
+    // marginBottom: hp(2),
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -131,17 +135,17 @@ const styles = StyleSheet.create({
     // borderRadius: 12,
     borderBottomWidth: 1,
     borderColor: '#5C4E4E',
-    marginVertical: 50,
+    marginVertical: wp(2),
   },
   input: {
-    padding: 16,
-    fontSize: 16,
+    padding: wp(4),
+    fontSize: wp(4),
     color: '#2d3436',
   },
   button: {
     backgroundColor: '#5C4E4E',
-    padding: 18,
-    borderRadius: 12,
+    padding: wp(4),
+    borderRadius: wp(2),
     alignItems: 'center',
     shadowColor: '#988686',
     shadowOffset: {
@@ -154,23 +158,23 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: wp(4),
     fontWeight: '600',
   },
   backButton: {
-    marginTop: 16,
+    marginTop: hp(2),
     alignItems: 'center',
   },
   backButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: wp(4),
     fontWeight: '500',
   },
   errorText: {
-    color: '#ff6b6b',
-    marginTop: 8,
+    color: '#C70039',
+    marginTop: hp(1),
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: wp(3),
   },
 });
 
