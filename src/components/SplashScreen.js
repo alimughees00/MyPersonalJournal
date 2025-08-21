@@ -77,7 +77,7 @@ const SplashScreen = ({onFinish}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#5C4E4E',
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   subtext: {
     fontSize: hp(2.8),
-    color: '#FFFFFF',
+    color: '#000',
     opacity: 0.8,
   },
   icon: {

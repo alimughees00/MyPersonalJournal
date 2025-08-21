@@ -113,10 +113,13 @@ const NewEntryScreen = ({navigation, route}) => {
     return () => backHandler.remove();
   }, [title, content, media]);
 
+  const recordListenerRef = useRef(null);
+
   // Cleanup audio on component unmount
   useEffect(() => {
     return () => {
       audioRecorderPlayer.removeRecordBackListener();
+      recordListenerRef.current = null;
       audioRecorderPlayer.removePlayBackListener();
       if (isRecording) {
         audioRecorderPlayer.stopRecorder();
@@ -325,24 +328,27 @@ const NewEntryScreen = ({navigation, route}) => {
   // Audio recording functions
   const startRecording = async () => {
     try {
-      // Stop any currently playing audio first
       if (isPlaying) {
         await onStopPlay();
       }
 
+      // Remove any previous listener
+      audioRecorderPlayer.removeRecordBackListener();
+      recordListenerRef.current = null;
+
+      setRecordTime('00:00'); // Set initial time ONCE before starting
+
       const path = `${RNFS.DocumentDirectoryPath}/audio_${Date.now()}.mp3`;
       await audioRecorderPlayer.startRecorder(path);
 
-      // Clear any existing listeners before adding new one
-      audioRecorderPlayer.removeRecordBackListener();
-
-      audioRecorderPlayer.addRecordBackListener(e => {
-        const formattedTime = formatTime(e.currentPosition);
-        setRecordTime(formattedTime);
-      });
+      // Add listener and store ref
+      recordListenerRef.current = audioRecorderPlayer.addRecordBackListener(
+        e => {
+          setRecordTime(formatTime(e.currentPosition));
+        },
+      );
 
       setIsRecording(true);
-      setRecordTime('00:00'); // Reset to initial state
     } catch (error) {
       console.error('Error starting recording:', error);
       Alert.alert('Error', 'Failed to start recording');
@@ -354,6 +360,7 @@ const NewEntryScreen = ({navigation, route}) => {
     try {
       const result = await audioRecorderPlayer.stopRecorder();
       audioRecorderPlayer.removeRecordBackListener();
+      recordListenerRef.current = null;
       setIsRecording(false);
       setRecordTime('00:00');
 
