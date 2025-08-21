@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   icon: {
     width: hp(30),
     height: hp(20),
-    marginTop: hp(5),
+    // marginTop: hp(5),
   },
   title: {
     fontSize: hp(4),
@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'center',
     lineHeight: hp(3),
+    bottom: hp(2),
   },
   formContainer: {
     backgroundColor: '#FFFFFF',

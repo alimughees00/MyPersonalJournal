@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    marginBottom: hp(2),
+    // marginBottom: hp(2),
   },
   text: {
     fontSize: hp(4),
@@ -91,9 +91,10 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
   },
   subtext: {
-    fontSize: hp(2.8),
+    fontSize: hp(2.5),
     color: '#000',
     opacity: 0.8,
+    bottom: hp(2),
   },
   icon: {
     width: hp(25),

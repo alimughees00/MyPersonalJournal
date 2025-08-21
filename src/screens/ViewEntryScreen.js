@@ -128,29 +128,66 @@ const ViewEntryScreen = ({navigation, route}) => {
     ]);
   };
 
+  // Add this helper function:
+  const formatTime = millis => {
+    const totalSeconds = Math.floor((millis || 0) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return (
+      String(hours).padStart(2, '0') +
+      ':' +
+      String(minutes).padStart(2, '0') +
+      ':' +
+      String(seconds).padStart(2, '0')
+    );
+  };
+
+  // Update playAudio function:
   const playAudio = async uri => {
     try {
       if (isPlaying) {
         await audioPlayer.current.stopPlayer();
+        audioPlayer.current.removePlayBackListener();
         setIsPlaying(false);
-      } else {
-        await audioPlayer.current.startPlayer(uri);
-        audioPlayer.current.addPlayBackListener(e => {
-          if (e.currentPosition === e.duration) {
-            setIsPlaying(false);
-          } else {
-            setPlayTime(
-              audioPlayer.current.mmssss(Math.floor(e.currentPosition)),
-            );
-            setDuration(audioPlayer.current.mmssss(Math.floor(e.duration)));
-          }
-        });
-        setIsPlaying(true);
+        setPlayTime('00:00:00');
+        setDuration('00:00:00');
+        return;
       }
+
+      setPlayTime('00:00:00');
+      setDuration('00:00:00');
+
+      await audioPlayer.current.startPlayer(uri);
+
+      audioPlayer.current.addPlayBackListener(e => {
+        setPlayTime(formatTime(e.currentPosition));
+        setDuration(formatTime(e.duration));
+        if (e.currentPosition >= e.duration) {
+          audioPlayer.current.stopPlayer();
+          audioPlayer.current.removePlayBackListener();
+          setIsPlaying(false);
+          setPlayTime('00:00:00');
+          setDuration(formatTime(e.duration));
+        }
+      });
+
+      setIsPlaying(true);
     } catch (error) {
       console.error('Error playing audio:', error);
+      setIsPlaying(false);
+      setPlayTime('00:00:00');
+      setDuration('00:00:00');
     }
   };
+
+  // Clean up playback listener on unmount:
+  useEffect(() => {
+    return () => {
+      audioPlayer.current.stopPlayer();
+      audioPlayer.current.removePlayBackListener();
+    };
+  }, []);
 
   return (
     <View
