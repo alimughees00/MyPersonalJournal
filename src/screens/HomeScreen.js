@@ -21,7 +21,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const BUILD_NUMBER = '1.0.2';
+const BUILD_NUMBER = '1.0.6';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 // ... (other imports remain the same)
 
