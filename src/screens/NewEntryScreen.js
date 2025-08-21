@@ -73,17 +73,16 @@ const NewEntryScreen = ({navigation, route}) => {
   const [content, setContent] = useState('');
   const [media, setMedia] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordTime, setRecordTime] = useState('00:00:00');
+  const [recordTime, setRecordTime] = useState('00:00');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playTime, setPlayTime] = useState('00:00:00');
-  const [duration, setDuration] = useState('00:00:00');
+  const [playTime, setPlayTime] = useState('00:00');
+  const [duration, setDuration] = useState('00:00');
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState(null);
   const [destructTime, setDestructTime] = useState(0);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
 
   const destructTimeOptions = [
     {label: 'Never', value: 0},
-    {label: '1 Min', value: MILLISECONDS_PER_MIN},
     {label: '2 Hours', value: TWO_HOURS},
     {label: '1 Day', value: MILLISECONDS_PER_DAY},
     {label: '7 Days', value: 7 * MILLISECONDS_PER_DAY},
@@ -113,6 +112,20 @@ const NewEntryScreen = ({navigation, route}) => {
     );
     return () => backHandler.remove();
   }, [title, content, media]);
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      audioRecorderPlayer.removeRecordBackListener();
+      audioRecorderPlayer.removePlayBackListener();
+      if (isRecording) {
+        audioRecorderPlayer.stopRecorder();
+      }
+      if (isPlaying) {
+        audioRecorderPlayer.stopPlayer();
+      }
+    };
+  }, []);
 
   const handleBackPress = () => {
     if (title.trim() || content.trim() || media.length > 0) {
@@ -297,20 +310,43 @@ const NewEntryScreen = ({navigation, route}) => {
     }
   };
 
+  // Fixed formatTime function for more consistent display
+  const formatTime = millis => {
+    const totalSeconds = Math.floor(millis / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+      2,
+      '0',
+    )}`;
+  };
+
   // Audio recording functions
   const startRecording = async () => {
     try {
+      // Stop any currently playing audio first
+      if (isPlaying) {
+        await onStopPlay();
+      }
+
       const path = `${RNFS.DocumentDirectoryPath}/audio_${Date.now()}.mp3`;
-      const uri = await audioRecorderPlayer.startRecorder(path);
+      await audioRecorderPlayer.startRecorder(path);
+
+      // Clear any existing listeners before adding new one
+      audioRecorderPlayer.removeRecordBackListener();
+
       audioRecorderPlayer.addRecordBackListener(e => {
-        setRecordTime(
-          audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
-        );
+        const formattedTime = formatTime(e.currentPosition);
+        setRecordTime(formattedTime);
       });
+
       setIsRecording(true);
+      setRecordTime('00:00'); // Reset to initial state
     } catch (error) {
       console.error('Error starting recording:', error);
       Alert.alert('Error', 'Failed to start recording');
+      setIsRecording(false);
     }
   };
 
@@ -319,17 +355,21 @@ const NewEntryScreen = ({navigation, route}) => {
       const result = await audioRecorderPlayer.stopRecorder();
       audioRecorderPlayer.removeRecordBackListener();
       setIsRecording(false);
-      setRecordTime('00:00:00');
+      setRecordTime('00:00');
 
-      setMedia(prev => [
-        ...prev,
-        {
-          type: 'audio/mpeg',
-          uri: result,
-        },
-      ]);
+      if (result) {
+        setMedia(prev => [
+          ...prev,
+          {
+            type: 'audio/mpeg',
+            uri: result,
+          },
+        ]);
+      }
     } catch (error) {
       console.error('Error stopping recording:', error);
+      setIsRecording(false);
+      setRecordTime('00:00');
     }
   };
 
@@ -339,16 +379,19 @@ const NewEntryScreen = ({navigation, route}) => {
       if (isPlaying) await onStopPlay();
 
       await audioRecorderPlayer.startPlayer(audioUri);
+
+      // Clear any existing listeners before adding new one
+      audioRecorderPlayer.removePlayBackListener();
+
       audioRecorderPlayer.addPlayBackListener(e => {
-        if (e.currentPosition === e.duration) {
+        if (e.currentPosition >= e.duration) {
           onStopPlay();
         } else {
-          setPlayTime(
-            audioRecorderPlayer.mmssss(Math.floor(e.currentPosition)),
-          );
-          setDuration(audioRecorderPlayer.mmssss(Math.floor(e.duration)));
+          setPlayTime(formatTime(e.currentPosition));
+          setDuration(formatTime(e.duration));
         }
       });
+
       setIsPlaying(true);
       setCurrentPlayingIndex(index);
     } catch (error) {
@@ -359,9 +402,10 @@ const NewEntryScreen = ({navigation, route}) => {
   const onStopPlay = async () => {
     try {
       await audioRecorderPlayer.stopPlayer();
-      await audioRecorderPlayer.removePlayBackListener();
+      audioRecorderPlayer.removePlayBackListener();
       setIsPlaying(false);
-      setPlayTime('00:00:00');
+      setPlayTime('00:00');
+      setDuration('00:00');
       setCurrentPlayingIndex(null);
     } catch (error) {
       console.error('Error stopping playback:', error);
@@ -533,7 +577,7 @@ const NewEntryScreen = ({navigation, route}) => {
           value={title}
           onChangeText={setTitle}
           maxLength={100}
-          cursorColor={mode ? '#fff' : '#000'} // Dynamic cursor color
+          cursorColor={mode ? '#fff' : '#000'}
         />
 
         <TextInput
@@ -544,7 +588,7 @@ const NewEntryScreen = ({navigation, route}) => {
           onChangeText={setContent}
           multiline
           textAlignVertical="top"
-          cursorColor={mode ? '#fff' : '#000'} // Dynamic cursor color
+          cursorColor={mode ? '#fff' : '#000'}
         />
 
         {media.length > 0 && (
@@ -559,11 +603,15 @@ const NewEntryScreen = ({navigation, route}) => {
         <TouchableOpacity
           style={styles.toolbarButton}
           onPress={capturePhoto}
-          disabled={isProcessingMedia}>
+          disabled={isProcessingMedia || isRecording}>
           <Icon
             name="photo-camera"
             size={hp(3)}
-            color={isProcessingMedia ? currentColors.secondaryText : '#FFFFFF'}
+            color={
+              isProcessingMedia || isRecording
+                ? currentColors.secondaryText
+                : '#FFFFFF'
+            }
           />
         </TouchableOpacity>
 
@@ -571,11 +619,15 @@ const NewEntryScreen = ({navigation, route}) => {
         <TouchableOpacity
           style={styles.toolbarButton}
           onPress={captureVideo}
-          disabled={isProcessingMedia}>
+          disabled={isProcessingMedia || isRecording}>
           <Icon
             name="videocam"
             size={hp(3)}
-            color={isProcessingMedia ? currentColors.secondaryText : '#FFFFFF'}
+            color={
+              isProcessingMedia || isRecording
+                ? currentColors.secondaryText
+                : '#FFFFFF'
+            }
           />
         </TouchableOpacity>
 
@@ -583,11 +635,15 @@ const NewEntryScreen = ({navigation, route}) => {
         <TouchableOpacity
           style={styles.toolbarButton}
           onPress={pickImage}
-          disabled={isProcessingMedia}>
+          disabled={isProcessingMedia || isRecording}>
           <Icon
             name="image"
             size={hp(3)}
-            color={isProcessingMedia ? currentColors.secondaryText : '#FFFFFF'}
+            color={
+              isProcessingMedia || isRecording
+                ? currentColors.secondaryText
+                : '#FFFFFF'
+            }
           />
         </TouchableOpacity>
 
@@ -595,20 +651,21 @@ const NewEntryScreen = ({navigation, route}) => {
         <TouchableOpacity
           style={styles.toolbarButton}
           onPress={pickVideo}
-          disabled={isProcessingMedia}>
+          disabled={isProcessingMedia || isRecording}>
           <Icon
             name="video-library"
             size={hp(3)}
-            color={isProcessingMedia ? currentColors.secondaryText : '#FFFFFF'}
+            color={
+              isProcessingMedia || isRecording
+                ? currentColors.secondaryText
+                : '#FFFFFF'
+            }
           />
         </TouchableOpacity>
 
         {/* Audio Recording */}
         <TouchableOpacity
-          style={[
-            styles.toolbarButton,
-            isRecording && {backgroundColor: '#FFEBEE'},
-          ]}
+          style={[styles.toolbarButton, isRecording && styles.recordingButton]}
           onPress={isRecording ? stopRecording : startRecording}
           disabled={isProcessingMedia}>
           <Icon
@@ -616,7 +673,7 @@ const NewEntryScreen = ({navigation, route}) => {
             size={hp(3)}
             color={
               isRecording
-                ? '#D32F2F'
+                ? '#FFFFFF'
                 : isProcessingMedia
                 ? currentColors.secondaryText
                 : '#FFFFFF'
@@ -624,10 +681,12 @@ const NewEntryScreen = ({navigation, route}) => {
           />
         </TouchableOpacity>
 
+        {/* Recording time display - positioned better */}
         {isRecording && (
-          <Text style={[styles.recordingTime, {color: '#D32F2F'}]}>
-            {recordTime}
-          </Text>
+          <View style={styles.recordingTimeContainer}>
+            <View style={styles.recordingIndicator} />
+            <Text style={styles.recordingTime}>{recordTime}</Text>
+          </View>
         )}
       </View>
     </KeyboardAvoidingView>
@@ -754,6 +813,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     borderTopWidth: 1,
     borderTopColor: '#2D2D2D',
+    position: 'relative',
   },
   toolbarButton: {
     padding: wp(3),
@@ -763,11 +823,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  recordingTime: {
+  recordingButton: {
+    backgroundColor: '#D32F2F',
+  },
+  recordingTimeContainer: {
     position: 'absolute',
-    right: wp(10),
+    top: hp(-4),
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingVertical: hp(0.5),
+    paddingHorizontal: wp(4),
+    borderRadius: wp(4),
+    marginHorizontal: wp(10),
+  },
+  recordingIndicator: {
+    width: wp(2),
+    height: wp(2),
+    borderRadius: wp(1),
+    backgroundColor: '#FF4444',
+    marginRight: wp(2),
+  },
+  recordingTime: {
     fontSize: hp(1.8),
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
 });
 

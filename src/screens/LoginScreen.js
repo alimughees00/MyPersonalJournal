@@ -65,11 +65,11 @@ const LoginScreen = ({navigation}) => {
           <View style={styles.innerContainer}>
             <View style={styles.headerContainer}>
               <Image
-                source={require('../assets/logo.png')}
+                source={require('../assets/logo_v1.png')}
                 style={styles.icon}
                 resizeMode="contain"
               />
-              <Text style={styles.title}>My Journal</Text>
+              {/* <Text style={styles.title}>My Journal</Text> */}
               <Text style={styles.subtitle}>
                 Your personal space for thoughts
               </Text>
@@ -107,6 +107,7 @@ const LoginScreen = ({navigation}) => {
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
+                    autoCapitalize="none"
                   />
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -186,10 +187,9 @@ const styles = StyleSheet.create({
     marginBottom: hp(2),
   },
   icon: {
-    width: wp(30),
-    height: hp(15),
-    tintColor: '#5C4E4E',
-    marginTop: hp(5), // Reduced from hp(13) to prevent content being pushed up too much
+    width: hp(30),
+    height: hp(20),
+    marginTop: hp(5),
   },
   title: {
     fontSize: hp(4),

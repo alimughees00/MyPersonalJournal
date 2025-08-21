@@ -10,6 +10,7 @@ import {
   Image,
   BackHandler,
   StatusBar,
+  Modal,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
@@ -30,7 +31,8 @@ const ViewEntryScreen = ({navigation, route}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [playTime, setPlayTime] = useState('00:00:00');
   const [duration, setDuration] = useState('00:00:00');
-
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false);
   // Color schemes based on mode
   const colors = {
     light: {
@@ -180,7 +182,7 @@ const ViewEntryScreen = ({navigation, route}) => {
             <TouchableOpacity
               style={[
                 styles.headerButton,
-                {backgroundColor: mode ? currentColors.primary : "#988686"},
+                {backgroundColor: mode ? currentColors.primary : '#988686'},
               ]}
               onPress={() => setIsEditing(true)}>
               <Icon name="edit" size={hp(2.5)} color="#FFFFFF" />
@@ -255,15 +257,21 @@ const ViewEntryScreen = ({navigation, route}) => {
                 {entry.media.map((item, index) => {
                   if (item.type.startsWith('image')) {
                     return (
-                      <Image
+                      <TouchableOpacity
                         key={index}
-                        source={{uri: item.uri}}
-                        style={[
-                          styles.mediaPreview,
-                          {backgroundColor: currentColors.mediaBg},
-                        ]}
-                        resizeMode="cover"
-                      />
+                        onPress={() => {
+                          setSelectedImage(item.uri);
+                          setIsImageModalVisible(true);
+                        }}>
+                        <Image
+                          source={{uri: item.uri}}
+                          style={[
+                            styles.mediaPreview,
+                            {backgroundColor: currentColors.mediaBg},
+                          ]}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
                     );
                   } else if (item.type.startsWith('video')) {
                     return (
@@ -312,6 +320,30 @@ const ViewEntryScreen = ({navigation, route}) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Image preview modal */}
+      <Modal
+        visible={isImageModalVisible}
+        transparent={true}
+        onRequestClose={() => setIsImageModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalContainer}
+          activeOpacity={1}
+          onPress={() => setIsImageModalVisible(false)}>
+          <View>
+            <Image
+              source={{uri: selectedImage}}
+              style={styles.modalImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setIsImageModalVisible(false)}>
+              <Icon name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
@@ -436,6 +468,23 @@ const styles = StyleSheet.create({
   audioTime: {
     marginLeft: wp(2),
     fontSize: hp(1.8),
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: wp(95),
+    height: hp(80),
+  },
+  modalClose: {
+    position: 'absolute',
+    top: hp(4),
+    right: wp(6),
+    backgroundColor: 'transparent',
+    padding: wp(2),
   },
 });
 

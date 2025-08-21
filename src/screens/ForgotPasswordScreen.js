@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,14 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
-import { auth } from '../utils/auth';
+import {auth} from '../utils/auth';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const ForgotPasswordScreen = ({ navigation }) => {
+const ForgotPasswordScreen = ({navigation}) => {
   const [securityAnswer, setSecurityAnswer] = useState('');
   const [error, setError] = useState('');
 
@@ -37,7 +37,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             text: 'OK',
             onPress: () => navigation.navigate('Login'),
           },
-        ]
+        ],
       );
     } else {
       setError('Incorrect security answer');
@@ -51,9 +51,16 @@ const ForgotPasswordScreen = ({ navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
       <View style={styles.innerContainer}>
         <View style={styles.headerContainer}>
-          <Icon name="lock-reset" size={hp(8)} color="#FFFFFF" style={styles.icon} />
+          <Icon
+            name="lock-reset"
+            size={hp(8)}
+            color="#5C4E4E"
+            style={styles.icon}
+          />
           <Text style={styles.title}>Account Recovery</Text>
-          <Text style={styles.subtitle}>Answer your security question to recover access</Text>
+          <Text style={styles.subtitle}>
+            Answer your security question to recover access
+          </Text>
         </View>
 
         <View style={styles.formContainer}>
@@ -62,7 +69,12 @@ const ForgotPasswordScreen = ({ navigation }) => {
               What is your favorite childhood pet's name?
             </Text>
             <View style={styles.inputWrapper}>
-              <Icon name="pets" size={hp(2.5)} color="#5C4E4E" style={styles.inputIcon} />
+              <Icon
+                name="pets"
+                size={hp(2.5)}
+                color="#5C4E4E"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Enter your answer"
@@ -75,12 +87,17 @@ const ForgotPasswordScreen = ({ navigation }) => {
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
           </View>
 
-          <TouchableOpacity 
-            style={styles.button} 
+          <TouchableOpacity
+            style={styles.button}
             onPress={handleRecovery}
             activeOpacity={0.8}>
             <Text style={styles.buttonText}>Recover Account</Text>
-            <Icon name="arrow-forward" size={hp(2.5)} color="#FFFFFF" style={styles.buttonIcon} />
+            <Icon
+              name="arrow-forward"
+              size={hp(2.5)}
+              color="#FFFFFF"
+              style={styles.buttonIcon}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -132,7 +149,7 @@ const styles = StyleSheet.create({
     padding: wp(6),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },

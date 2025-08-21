@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import React, {useEffect} from 'react';
+import {View, StyleSheet, Animated, Image} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+} from 'react-native-responsive-screen';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-const SplashScreen = ({ onFinish }) => {
+const SplashScreen = ({onFinish}) => {
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
   const textAnim = new Animated.Value(hp(5));
@@ -35,33 +35,37 @@ const SplashScreen = ({ onFinish }) => {
 
   return (
     <View style={styles.container}>
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.iconContainer, 
-          { 
+          styles.iconContainer,
+          {
             opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }]
-          }
-        ]}
-      >
-        <Icon name="book" size={hp(15)} color="#FFFFFF" />
+            transform: [{scale: scaleAnim}],
+          },
+        ]}>
+        {/* <Icon name="book" size={hp(15)} color="#FFFFFF" /> */}
+        <Image
+          source={require('../assets/logo_v1.png')}
+          style={styles.icon}
+          resizeMode="contain"
+        />
       </Animated.View>
-      <Animated.Text
+      {/* <Animated.Text
         style={[
           styles.text,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: textAnim }],
+            transform: [{translateY: textAnim}],
           },
         ]}>
         My Journal
-      </Animated.Text>
+      </Animated.Text> */}
       <Animated.Text
         style={[
           styles.subtext,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: textAnim }],
+            transform: [{translateY: textAnim}],
           },
         ]}>
         Your personal space for thoughts
@@ -87,9 +91,13 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
   },
   subtext: {
-    fontSize: hp(2.2),
+    fontSize: hp(2.8),
     color: '#FFFFFF',
     opacity: 0.8,
+  },
+  icon: {
+    width: hp(25),
+    height: hp(25),
   },
 });
 
