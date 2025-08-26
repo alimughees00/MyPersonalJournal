@@ -13,7 +13,7 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      {/* <StatusBar barStyle="light-content" backgroundColor="#fff" /> */}
       {isLoading ? (
         <SplashScreen onFinish={() => setIsLoading(false)} />
       ) : (

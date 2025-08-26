@@ -522,7 +522,7 @@ const NewEntryScreen = ({navigation, route}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
-        barStyle={mode ? 'light-content' : 'dark-content'}
+        barStyle={mode ? 'light-content' : 'light-content'}
         backgroundColor={currentColors.header}
       />
 

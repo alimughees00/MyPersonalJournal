@@ -59,12 +59,12 @@ const HomeScreen = ({navigation}) => {
       emptySubtext: '#A0A0A0',
       footer: '#1E1E1E',
       mediaBg: '#2D2D2D',
-    }
+    },
   };
 
   useEffect(() => {
     isMounted.current = true;
-    
+
     // Load initial entries
     loadEntries();
 
@@ -83,17 +83,23 @@ const HomeScreen = ({navigation}) => {
     });
 
     // Set up app state listener
-    const appStateSubscription = AppState.addEventListener('change', nextAppState => {
-      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App came to foreground
-        loadEntries();
-        setIsUserActive(true);
-      } else if (nextAppState.match(/inactive|background/)) {
-        // App went to background
-        setIsUserActive(false);
-      }
-      appState.current = nextAppState;
-    });
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      nextAppState => {
+        if (
+          appState.current.match(/inactive|background/) &&
+          nextAppState === 'active'
+        ) {
+          // App came to foreground
+          loadEntries();
+          setIsUserActive(true);
+        } else if (nextAppState.match(/inactive|background/)) {
+          // App went to background
+          setIsUserActive(false);
+        }
+        appState.current = nextAppState;
+      },
+    );
 
     // Session check interval
     const sessionInterval = setInterval(() => {
@@ -123,7 +129,7 @@ const HomeScreen = ({navigation}) => {
   const loadEntries = async () => {
     try {
       if (!isMounted.current) return;
-      
+
       const loadedEntries = await storage.getEntries();
       // Sort entries by date in descending order (newest first)
       const sortedEntries = loadedEntries.sort(
@@ -268,8 +274,12 @@ const HomeScreen = ({navigation}) => {
   }, []);
 
   return (
-    <View style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={currentColors.header} />
+    <View
+      style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'light-content'}
+        backgroundColor={currentColors.header}
+      />
       <View style={[styles.header, {backgroundColor: currentColors.header}]}>
         <View style={styles.modeToggleContainer}>
           <Switch
@@ -291,7 +301,11 @@ const HomeScreen = ({navigation}) => {
       </View>
 
       {isLoading ? (
-        <View style={[styles.loadingContainer, {backgroundColor: currentColors.background}]}>
+        <View
+          style={[
+            styles.loadingContainer,
+            {backgroundColor: currentColors.background},
+          ]}>
           <ActivityIndicator size="large" color={currentColors.primary} />
         </View>
       ) : (
@@ -301,13 +315,26 @@ const HomeScreen = ({navigation}) => {
           renderItem={({item}) => (
             <TouchableOpacity
               style={[styles.entryCard, {backgroundColor: currentColors.card}]}
-              onPress={() => navigation.navigate('ViewEntry', {entry: item, mode: isDarkMode})}>
+              onPress={() =>
+                navigation.navigate('ViewEntry', {
+                  entry: item,
+                  mode: isDarkMode,
+                })
+              }>
               <View style={styles.entryHeader}>
-                <Text style={[styles.entryDate, {color: currentColors.secondaryText}]}>
+                <Text
+                  style={[
+                    styles.entryDate,
+                    {color: currentColors.secondaryText},
+                  ]}>
                   {new Date(item.date).toLocaleDateString()}
                 </Text>
                 {item.expirationTime > 0 && (
-                  <View style={[styles.expirationBadge, {backgroundColor: currentColors.primary}]}>
+                  <View
+                    style={[
+                      styles.expirationBadge,
+                      {backgroundColor: currentColors.primary},
+                    ]}>
                     <Icon name="timer" size={14} color="#fff" />
                     <Text style={styles.expirationText}>
                       {getExpirationText(item.expirationTime)}
@@ -315,17 +342,32 @@ const HomeScreen = ({navigation}) => {
                   </View>
                 )}
               </View>
-              {item.title && <Text style={[styles.entryTitle, {color: currentColors.text}]}>{item.title}</Text>}
+              {item.title && (
+                <Text style={[styles.entryTitle, {color: currentColors.text}]}>
+                  {item.title}
+                </Text>
+              )}
               {item.content && (
-                <Text style={[styles.entryPreview, {color: currentColors.secondaryText}]} numberOfLines={2}>
+                <Text
+                  style={[
+                    styles.entryPreview,
+                    {color: currentColors.secondaryText},
+                  ]}
+                  numberOfLines={2}>
                   {item.content}
                 </Text>
               )}
               {item.media && item.media.length > 0 && (
-                <View style={[styles.mediaContainer, {backgroundColor: currentColors.mediaBg}]}>
+                <View
+                  style={[
+                    styles.mediaContainer,
+                    {backgroundColor: currentColors.mediaBg},
+                  ]}>
                   {renderMediaPreview(item.media)}
                   {item.media.length > 1 && (
-                    <Text style={styles.mediaCount}>+{item.media.length - 1}</Text>
+                    <Text style={styles.mediaCount}>
+                      +{item.media.length - 1}
+                    </Text>
                   )}
                 </View>
               )}
@@ -334,8 +376,8 @@ const HomeScreen = ({navigation}) => {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
           refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
+            <RefreshControl
+              refreshing={refreshing}
               onRefresh={onRefresh}
               colors={[currentColors.primary]}
               tintColor={currentColors.primary}
@@ -344,8 +386,15 @@ const HomeScreen = ({navigation}) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Icon name="book" size={48} color={currentColors.emptyText} />
-              <Text style={[styles.emptyText, {color: currentColors.emptyText}]}>No entries yet</Text>
-              <Text style={[styles.emptySubtext, {color: currentColors.emptySubtext}]}>
+              <Text
+                style={[styles.emptyText, {color: currentColors.emptyText}]}>
+                No entries yet
+              </Text>
+              <Text
+                style={[
+                  styles.emptySubtext,
+                  {color: currentColors.emptySubtext},
+                ]}>
                 Tap the + button to create your first entry
               </Text>
             </View>
@@ -355,14 +404,19 @@ const HomeScreen = ({navigation}) => {
 
       <TouchableOpacity
         style={[styles.fab, {backgroundColor: currentColors.primary}]}
-        onPress={() => navigation.navigate('NewEntry',{mode: isDarkMode})}>
+        onPress={() => navigation.navigate('NewEntry', {mode: isDarkMode})}>
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
       <View style={[styles.footer, {backgroundColor: currentColors.footer}]}>
-        <Text style={[styles.buildNumber, {color: currentColors.secondaryText}]}>Build {BUILD_NUMBER}</Text>
+        <Text
+          style={[styles.buildNumber, {color: currentColors.secondaryText}]}>
+          Build {BUILD_NUMBER}
+        </Text>
         <TouchableOpacity onPress={handleFeedbackPress}>
-          <Text style={[styles.feedbackLink, {color: currentColors.primary}]}>Send Feedback</Text>
+          <Text style={[styles.feedbackLink, {color: currentColors.primary}]}>
+            Send Feedback
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -381,7 +435,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -413,7 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(2),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
@@ -481,7 +535,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
@@ -508,7 +562,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     // borderTopWidth: 1,
     // borderTopColor: '#2D2D2D',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
   },
   buildNumber: {
     fontSize: hp(1.6),

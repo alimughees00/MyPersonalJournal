@@ -28,16 +28,70 @@ const LoginScreen = ({navigation}) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const [passwordValidations, setPasswordValidations] = useState({
+    length: false,
+    uppercase: false,
+    number: false,
+    specialChar: false,
+  });
+
+  const validatePassword = text => {
+    setPassword(text);
+
+    setPasswordValidations({
+      length: text.length >= 8,
+      uppercase: /[A-Z]/.test(text),
+      number: /[0-9]/.test(text),
+      specialChar: /[@$!%*?&]/.test(text),
+    });
+  };
+
   const handleLogin = async () => {
-    if (!username || !password) {
-      setError('Please fill in all fields');
+    setError('');
+
+    // Username validation
+    const usernameRegex = /^[a-zA-Z0-9._]{3,}$/;
+    if (!username.trim()) {
+      setError('Username is required');
+      return;
+    } else if (!usernameRegex.test(username)) {
+      setError(
+        'Username must be at least 3 characters and only contain letters, numbers, dots, or underscores',
+      );
       return;
     }
 
+    // Password validation
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!password) {
+      setError('Password is required');
+      return;
+    } else if (!passwordRegex.test(password)) {
+      setError(
+        'Password must be at least 8 characters long and include uppercase, number, and special character',
+      );
+      return;
+    }
+
+    // Security question validation (if required)
+    if (showSecurityQuestion) {
+      const secAnswerRegex = /^[A-Za-z\s]{2,}$/;
+      if (!securityAnswer.trim()) {
+        setError('Security answer is required');
+        return;
+      } else if (!secAnswerRegex.test(securityAnswer)) {
+        setError(
+          'Security answer must be at least 2 letters and contain only alphabets',
+        );
+        return;
+      }
+    }
+
     const result = await auth.login(
-      username,
+      username.trim(),
       password,
-      showSecurityQuestion ? securityAnswer : null,
+      showSecurityQuestion ? securityAnswer.trim() : null,
     );
 
     if (result.needsSecuritySetup) {
@@ -69,7 +123,6 @@ const LoginScreen = ({navigation}) => {
                 style={styles.icon}
                 resizeMode="contain"
               />
-              {/* <Text style={styles.title}>My Journal</Text> */}
               <Text style={styles.subtitle}>
                 Your personal space for thoughts
               </Text>
@@ -77,6 +130,7 @@ const LoginScreen = ({navigation}) => {
 
             <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
+                {/* Username */}
                 <View style={styles.inputWrapper}>
                   <Icon
                     name="user"
@@ -89,10 +143,14 @@ const LoginScreen = ({navigation}) => {
                     placeholder="Username"
                     placeholderTextColor="#9E9E9E"
                     value={username}
-                    onChangeText={setUsername}
+                    onChangeText={text =>
+                      setUsername(text.replace(/[^a-zA-Z0-9._]/g, ''))
+                    }
                     autoCapitalize="none"
                   />
                 </View>
+
+                {/* Password */}
                 <View style={styles.inputWrapper}>
                   <Icon
                     name="lock"
@@ -105,7 +163,7 @@ const LoginScreen = ({navigation}) => {
                     placeholder="Password"
                     placeholderTextColor="#9E9E9E"
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={validatePassword}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
                   />
@@ -119,6 +177,31 @@ const LoginScreen = ({navigation}) => {
                     />
                   </TouchableOpacity>
                 </View>
+
+                {/* Password checklist
+                <View style={styles.validationContainer}>
+                  <Text style={styles.validationText}>
+                    {passwordValidations.length ? '✅' : '❌'} Minimum 8
+                    characters
+                  </Text>
+                  <Text style={styles.validationText}>
+                    {passwordValidations.uppercase ? '✅' : '❌'} At least 1
+                    uppercase letter
+                  </Text>
+                  <Text style={styles.validationText}>
+                    {passwordValidations.lowercase ? '✅' : '❌'} At least 1
+                    lowercase letter
+                  </Text>
+                  <Text style={styles.validationText}>
+                    {passwordValidations.number ? '✅' : '❌'} At least 1 number
+                  </Text>
+                  <Text style={styles.validationText}>
+                    {passwordValidations.specialChar ? '✅' : '❌'} At least 1
+                    special character
+                  </Text>
+                </View> */}
+
+                {/* Security Question */}
                 {showSecurityQuestion && (
                   <View>
                     <View style={styles.inputWrapper}>
@@ -138,8 +221,10 @@ const LoginScreen = ({navigation}) => {
                         placeholder="Enter security answer"
                         placeholderTextColor="#9E9E9E"
                         value={securityAnswer}
-                        onChangeText={setSecurityAnswer}
-                        autoCapitalize="none"
+                        onChangeText={text =>
+                          setSecurityAnswer(text.replace(/[^a-zA-Z\s]/g, ''))
+                        }
+                        autoCapitalize="words"
                       />
                     </View>
                   </View>
@@ -180,7 +265,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: wp(8),
-    paddingBottom: hp(5), // Add padding at bottom for keyboard
+    paddingBottom: hp(5),
   },
   headerContainer: {
     alignItems: 'center',
@@ -189,13 +274,6 @@ const styles = StyleSheet.create({
   icon: {
     width: hp(30),
     height: hp(20),
-    // marginTop: hp(5),
-  },
-  title: {
-    fontSize: hp(4),
-    fontWeight: 'bold',
-    color: '#5C4E4E',
-    marginBottom: hp(0),
   },
   subtitle: {
     fontSize: hp(2),
@@ -271,6 +349,15 @@ const styles = StyleSheet.create({
     color: '#757575',
     marginBottom: hp(1),
     paddingHorizontal: wp(2),
+  },
+  validationContainer: {
+    marginTop: hp(1),
+    marginLeft: wp(2),
+  },
+  validationText: {
+    fontSize: hp(1.6),
+    color: '#555',
+    marginVertical: hp(0.3),
   },
 });
 

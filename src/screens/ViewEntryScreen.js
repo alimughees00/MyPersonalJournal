@@ -193,7 +193,7 @@ const ViewEntryScreen = ({navigation, route}) => {
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
-        barStyle={mode ? 'light-content' : 'dark-content'}
+        barStyle={mode ? 'light-content' : 'light-content'}
         backgroundColor={currentColors.header}
       />
 
