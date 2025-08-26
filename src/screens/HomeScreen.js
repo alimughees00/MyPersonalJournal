@@ -25,11 +25,13 @@ const BUILD_NUMBER = '1.0.6';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 // ... (other imports remain the same)
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({navigation, route}) => {
+  const {mode} = route?.params || {};
+  console.log('aaaaaaaaaaaaaa', mode);
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(mode);
   const [isUserActive, setIsUserActive] = useState(true);
   const appState = useRef(AppState.currentState);
   const isMounted = useRef(true);
@@ -277,7 +279,7 @@ const HomeScreen = ({navigation}) => {
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'light-content'}
+        barStyle="light-content" // Always use light content
         backgroundColor={currentColors.header}
       />
       <View style={[styles.header, {backgroundColor: currentColors.header}]}>
@@ -293,7 +295,7 @@ const HomeScreen = ({navigation}) => {
         <TouchableOpacity
           onPress={() => {
             auth.logout();
-            navigation.replace('Login');
+            navigation.replace('Login', {mode: isDarkMode});
           }}
           style={styles.logoutButton}>
           <Icon name="logout" size={24} color="#fff" />

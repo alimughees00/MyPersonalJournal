@@ -101,6 +101,7 @@ const ViewEntryScreen = ({navigation, route}) => {
         content: content.trim(),
       };
       await storage.updateEntry(updatedEntry);
+      navigation.navigate('Home', {refresh: true, mode: mode});
       setIsEditing(false);
       Alert.alert('Success', 'Entry updated successfully');
     } catch (error) {
@@ -117,7 +118,7 @@ const ViewEntryScreen = ({navigation, route}) => {
         onPress: async () => {
           try {
             await storage.deleteEntry(entry.id);
-            navigation.navigate('Home', {refresh: true});
+            navigation.navigate('Home', {refresh: true, mode: mode});
           } catch (error) {
             console.error('Error deleting entry:', error);
             Alert.alert('Error', 'Failed to delete entry');

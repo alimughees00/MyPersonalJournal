@@ -438,7 +438,7 @@ const NewEntryScreen = ({navigation, route}) => {
 
       await storage.saveEntry(entry);
       auth.updateActivity();
-      navigation.navigate('Home', {refresh: true});
+      navigation.navigate('Home', {refresh: true, mode: mode});
     } catch (error) {
       console.error('Error saving entry:', error);
       Alert.alert('Error', 'Failed to save entry');

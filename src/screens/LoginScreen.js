@@ -20,7 +20,8 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const LoginScreen = ({navigation}) => {
+const LoginScreen = ({navigation, route}) => {
+  const {mode} = route?.params || {};
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
@@ -100,7 +101,7 @@ const LoginScreen = ({navigation}) => {
     }
 
     if (result.success) {
-      navigation.replace('Home');
+      navigation.replace('Home', {mode: mode});
     } else {
       setError('Invalid credentials');
     }
