@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,22 +9,25 @@ import {
   Alert,
   Image,
   BackHandler,
-  StatusBar,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import CustomModal from '../components/CustomModal';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {auth} from '../utils/auth';
-import {storage} from '../utils/storage';
+import { auth } from '../utils/auth';
+import { storage } from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
-const ViewEntryScreen = ({navigation, route}) => {
-  const {entry, mode} = route.params;
+const ViewEntryScreen = ({ navigation, route }) => {
+  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+  const { entry, mode } = route.params;
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
@@ -33,6 +36,16 @@ const ViewEntryScreen = ({navigation, route}) => {
   const [duration, setDuration] = useState('00:00:00');
   const [selectedImage, setSelectedImage] = useState(null);
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'OK',
+    cancelText: 'Cancel',
+    isDestructive: false,
+  });
   // Color schemes based on mode
   const colors = {
     light: {
@@ -67,18 +80,19 @@ const ViewEntryScreen = ({navigation, route}) => {
 
   const handleBackPress = () => {
     if (isEditing && (title !== entry.title || content !== entry.content)) {
-      Alert.alert(
-        'Discard Changes',
-        'You have unsaved changes. Are you sure you want to go back?',
-        [
-          {text: 'Cancel', style: 'cancel'},
-          {
-            text: 'Discard',
-            onPress: () => navigation.goBack(),
-            style: 'destructive',
-          },
-        ],
-      );
+      setModalConfig({
+        title: 'Discard Changes',
+        message: 'You have unsaved changes. Are you sure you want to go back?',
+        confirmText: 'Discard',
+        cancelText: 'Cancel',
+        isDestructive: true,
+        onConfirm: () => {
+          setModalVisible(false);
+          navigation.goBack();
+        },
+        onCancel: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return true;
     }
     navigation.goBack();
@@ -94,6 +108,16 @@ const ViewEntryScreen = ({navigation, route}) => {
   }, [isEditing, title, content]);
 
   const saveChanges = async () => {
+    if (!title.trim() && !content.trim() && (!entry.media || entry.media.length === 0)) {
+      setModalConfig({
+        title: 'Empty Entry',
+        message: 'Entry cannot be empty. Please add some content or media.',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
+      return;
+    }
+
     try {
       const updatedEntry = {
         ...entry,
@@ -102,30 +126,48 @@ const ViewEntryScreen = ({navigation, route}) => {
       };
       await storage.updateEntry(updatedEntry);
       setIsEditing(false);
-      Alert.alert('Success', 'Entry updated successfully');
+      setModalConfig({
+        title: 'Success',
+        message: 'Entry updated successfully',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } catch (error) {
       console.error('Error updating entry:', error);
-      Alert.alert('Error', 'Failed to update entry');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to update entry',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     }
   };
 
   const deleteEntry = async () => {
-    Alert.alert('Delete Entry', 'Are you sure you want to delete this entry?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Delete',
-        onPress: async () => {
-          try {
-            await storage.deleteEntry(entry.id);
-            navigation.navigate('Home', {refresh: true});
-          } catch (error) {
-            console.error('Error deleting entry:', error);
-            Alert.alert('Error', 'Failed to delete entry');
-          }
-        },
-        style: 'destructive',
+    setModalConfig({
+      title: 'Delete Entry',
+      message: 'Are you sure you want to delete this entry?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await storage.deleteEntry(entry.id);
+          setModalVisible(false);
+          navigation.navigate('Home', { refresh: true });
+        } catch (error) {
+          console.error('Error deleting entry:', error);
+          setModalConfig({
+            title: 'Error',
+            message: 'Failed to delete entry',
+            onConfirm: () => setModalVisible(false),
+          });
+          setModalVisible(true);
+        }
       },
-    ]);
+      onCancel: () => setModalVisible(false),
+    });
+    setModalVisible(true);
   };
 
   // Add this helper function:
@@ -190,27 +232,29 @@ const ViewEntryScreen = ({navigation, route}) => {
   }, []);
 
   return (
-    <View
-      style={[styles.container, {backgroundColor: currentColors.background}]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'android' ? STATUS_BAR_HEIGHT : 0}
+      style={[styles.container, { backgroundColor: currentColors.background }]}>
       <StatusBar
         barStyle={mode ? 'light-content' : 'light-content'}
         backgroundColor={currentColors.header}
       />
 
       {/* Updated Header to match NewEntryScreen */}
-      <View style={[styles.header, {backgroundColor: currentColors.header}]}>
+      <View style={[styles.header, { backgroundColor: currentColors.header, paddingTop: STATUS_BAR_HEIGHT }]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Icon name="arrow-back" size={hp(3)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>
           {isEditing ? 'Edit Entry' : 'View Entry'}
         </Text>
         {isEditing ? (
           <TouchableOpacity
-            style={[styles.saveButton, {backgroundColor: '#FFFFFF'}]}
+            style={[styles.saveButton, { backgroundColor: '#FFFFFF' }]}
             onPress={saveChanges}>
             <Text
-              style={[styles.saveButtonText, {color: currentColors.primary}]}>
+              style={[styles.saveButtonText, { color: currentColors.primary }]}>
               Save
             </Text>
           </TouchableOpacity>
@@ -219,7 +263,7 @@ const ViewEntryScreen = ({navigation, route}) => {
             <TouchableOpacity
               style={[
                 styles.headerButton,
-                {backgroundColor: mode ? currentColors.primary : '#988686'},
+                { backgroundColor: mode ? currentColors.primary : '#988686' },
               ]}
               onPress={() => setIsEditing(true)}>
               <Icon name="edit" size={hp(2.5)} color="#FFFFFF" />
@@ -227,7 +271,7 @@ const ViewEntryScreen = ({navigation, route}) => {
             <TouchableOpacity
               style={[
                 styles.headerButton,
-                {backgroundColor: currentColors.deleteButton},
+                { backgroundColor: currentColors.deleteButton },
               ]}
               onPress={deleteEntry}>
               <Icon name="delete" size={hp(2.5)} color="#FFFFFF" />
@@ -236,10 +280,12 @@ const ViewEntryScreen = ({navigation, route}) => {
         )}
       </View>
 
-      <ScrollView style={styles.scrollContainer}>
+      <ScrollView 
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}>
         <View
-          style={[styles.dateContainer, {backgroundColor: currentColors.card}]}>
-          <Text style={[styles.dateText, {color: currentColors.secondaryText}]}>
+          style={[styles.dateContainer, { backgroundColor: currentColors.card }]}>
+          <Text style={[styles.dateText, { color: currentColors.secondaryText }]}>
             {new Date(entry.date).toLocaleDateString()} at{' '}
             {new Date(entry.date).toLocaleTimeString()}
           </Text>
@@ -249,7 +295,7 @@ const ViewEntryScreen = ({navigation, route}) => {
           <View
             style={[
               styles.editContainer,
-              {backgroundColor: currentColors.card},
+              { backgroundColor: currentColors.card },
             ]}>
             <TextInput
               style={[
@@ -267,7 +313,7 @@ const ViewEntryScreen = ({navigation, route}) => {
               cursorColor={mode ? '#fff' : '#000'}
             />
             <TextInput
-              style={[styles.contentInput, {color: currentColors.text}]}
+              style={[styles.contentInput, { color: currentColors.text }]}
               value={content}
               onChangeText={setContent}
               placeholder="Write your thoughts..."
@@ -281,12 +327,12 @@ const ViewEntryScreen = ({navigation, route}) => {
           <View
             style={[
               styles.viewContainer,
-              {backgroundColor: currentColors.card},
+              { backgroundColor: currentColors.card },
             ]}>
-            <Text style={[styles.titleText, {color: currentColors.text}]}>
+            <Text style={[styles.titleText, { color: currentColors.text }]}>
               {title}
             </Text>
-            <Text style={[styles.contentText, {color: currentColors.text}]}>
+            <Text style={[styles.contentText, { color: currentColors.text }]}>
               {content}
             </Text>
             {entry.media && entry.media.length > 0 && (
@@ -301,10 +347,10 @@ const ViewEntryScreen = ({navigation, route}) => {
                           setIsImageModalVisible(true);
                         }}>
                         <Image
-                          source={{uri: item.uri}}
+                          source={{ uri: item.uri }}
                           style={[
                             styles.mediaPreview,
-                            {backgroundColor: currentColors.mediaBg},
+                            { backgroundColor: currentColors.mediaBg },
                           ]}
                           resizeMode="cover"
                         />
@@ -314,10 +360,10 @@ const ViewEntryScreen = ({navigation, route}) => {
                     return (
                       <Video
                         key={index}
-                        source={{uri: item.uri}}
+                        source={{ uri: item.uri }}
                         style={[
                           styles.mediaPreview,
-                          {backgroundColor: currentColors.mediaBg},
+                          { backgroundColor: currentColors.mediaBg },
                         ]}
                         resizeMode="cover"
                         controls={true}
@@ -329,7 +375,7 @@ const ViewEntryScreen = ({navigation, route}) => {
                         key={index}
                         style={[
                           styles.audioContainer,
-                          {backgroundColor: currentColors.mediaBg},
+                          { backgroundColor: currentColors.mediaBg },
                         ]}
                         onPress={() => playAudio(item.uri)}>
                         <Icon
@@ -344,7 +390,7 @@ const ViewEntryScreen = ({navigation, route}) => {
                         <Text
                           style={[
                             styles.audioTime,
-                            {color: currentColors.text},
+                            { color: currentColors.text },
                           ]}>
                           {isPlaying ? playTime : duration}
                         </Text>
@@ -369,7 +415,7 @@ const ViewEntryScreen = ({navigation, route}) => {
           onPress={() => setIsImageModalVisible(false)}>
           <View>
             <Image
-              source={{uri: selectedImage}}
+              source={{ uri: selectedImage }}
               style={styles.modalImage}
               resizeMode="contain"
             />
@@ -381,7 +427,18 @@ const ViewEntryScreen = ({navigation, route}) => {
           </View>
         </TouchableOpacity>
       </Modal>
-    </View>
+
+      <CustomModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm || (() => setModalVisible(false))}
+        onCancel={modalConfig.onCancel}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        isDestructive={modalConfig.isDestructive}
+      />
+    </KeyboardAvoidingView>
   );
 };
 
@@ -392,15 +449,18 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: hp(10),
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: hp(2),
+    paddingBottom: hp(2),
     paddingHorizontal: wp(5),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -438,7 +498,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(1),
     elevation: 1,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 1,
   },
@@ -451,7 +511,7 @@ const styles = StyleSheet.create({
     margin: wp(4),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -461,7 +521,7 @@ const styles = StyleSheet.create({
     margin: wp(4),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },

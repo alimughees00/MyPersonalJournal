@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, StyleSheet, Animated, Image} from 'react-native';
+import {View, StyleSheet, Animated, Image, StatusBar} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -35,6 +35,7 @@ const SplashScreen = ({onFinish}) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <Animated.View
         style={[
           styles.iconContainer,

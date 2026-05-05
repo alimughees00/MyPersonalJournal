@@ -12,27 +12,41 @@ import {
   Image,
   Switch,
   AppState,
+  Platform,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
+import CustomModal from '../components/CustomModal';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DeviceInfo from 'react-native-device-info';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const BUILD_NUMBER = '1.0.6';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
-// ... (other imports remain the same)
 
-const HomeScreen = ({navigation}) => {
+const HomeScreen = ({navigation, route}) => {
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'OK',
+    cancelText: 'Cancel',
+    isDestructive: false,
+  });
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isUserActive, setIsUserActive] = useState(true);
+  const [buildNumber, setBuildNumber] = useState('');
   const appState = useRef(AppState.currentState);
   const isMounted = useRef(true);
+  const STATUS_BAR_HEIGHT =
+    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
 
   // Color schemes
   const colors = {
@@ -63,21 +77,28 @@ const HomeScreen = ({navigation}) => {
   };
 
   useEffect(() => {
+    const getVersion = async () => {
+      const version = await DeviceInfo.getVersion();
+      setBuildNumber(version);
+    };
+    getVersion();
+  }, []);
+
+  useEffect(() => {
     isMounted.current = true;
 
     // Load initial entries
     loadEntries();
 
-    // Set up navigation focus listener
-    const focusSubscription = navigation.addListener('focus', e => {
+    // Set up navigation listeners
+    const focusSubscription = navigation.addListener('focus', () => {
       auth.updateActivity();
-      if (!e.data?.state?.params?.skipRefresh) {
+      if (!route.params?.skipRefresh) {
         loadEntries();
       }
       setIsUserActive(true);
     });
 
-    // Set up navigation blur listener (when user navigates away)
     const blurSubscription = navigation.addListener('blur', () => {
       setIsUserActive(false);
     });
@@ -101,7 +122,7 @@ const HomeScreen = ({navigation}) => {
       },
     );
 
-    // Session check interval
+    // Setup intervals
     const sessionInterval = setInterval(() => {
       if (auth.isSessionExpired()) {
         auth.logout();
@@ -109,17 +130,28 @@ const HomeScreen = ({navigation}) => {
       }
     }, 60000);
 
-    // Auto-refresh interval (1 minute)
-    const refreshInterval = setInterval(() => {
+    const autoRefreshInterval = setInterval(() => {
       if (isUserActive && isMounted.current) {
         loadEntries();
       }
     }, 60000);
 
+    const cleanupInterval = setInterval(() => {
+      if (isMounted.current) {
+        loadEntries();
+      }
+    }, 300000);
+
+    const activityInterval = setInterval(() => {
+      auth.updateActivity();
+    }, 60000);
+
     return () => {
       isMounted.current = false;
       clearInterval(sessionInterval);
-      clearInterval(refreshInterval);
+      clearInterval(autoRefreshInterval);
+      clearInterval(cleanupInterval);
+      clearInterval(activityInterval);
       focusSubscription();
       blurSubscription();
       appStateSubscription.remove();
@@ -146,42 +178,6 @@ const HomeScreen = ({navigation}) => {
   };
 
   const currentColors = isDarkMode ? colors.dark : colors.light;
-
-  useEffect(() => {
-    loadEntries();
-
-    const focusSubscription = navigation.addListener('focus', e => {
-      auth.updateActivity();
-      if (!e.data?.state?.params?.skipRefresh) {
-        loadEntries();
-      }
-    });
-
-    const activityInterval = setInterval(() => {
-      auth.updateActivity();
-    }, 60000);
-
-    // Check for expired entries every 5 minutes
-    const cleanupInterval = setInterval(() => {
-      loadEntries();
-    }, 300000);
-
-    const sessionInterval = setInterval(() => {
-      if (auth.isSessionExpired()) {
-        auth.logout();
-        navigation.replace('Login');
-      }
-    }, 60000);
-
-    return () => {
-      clearInterval(sessionInterval);
-      clearInterval(activityInterval);
-      clearInterval(cleanupInterval);
-      focusSubscription();
-    };
-  }, [navigation]);
-
-  // ... (other existing functions remain the same)
 
   const renderMediaPreview = media => {
     if (!media || media.length === 0) return null;
@@ -273,14 +269,23 @@ const HomeScreen = ({navigation}) => {
     setRefreshing(false);
   }, []);
 
+  useEffect(() => {
+    StatusBar.setBarStyle('light-content', true);
+    StatusBar.setBackgroundColor(currentColors.header, true);
+  }, [isDarkMode]);
+
   return (
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'light-content'}
-        backgroundColor={currentColors.header}
-      />
-      <View style={[styles.header, {backgroundColor: currentColors.header}]}>
+      {Platform.OS === 'ios' && <StatusBar barStyle="light-content" />}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: currentColors.header,
+            paddingTop: STATUS_BAR_HEIGHT,
+          },
+        ]}>
         <View style={styles.modeToggleContainer}>
           <Switch
             value={isDarkMode}
@@ -292,8 +297,20 @@ const HomeScreen = ({navigation}) => {
         <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>My Journal</Text>
         <TouchableOpacity
           onPress={() => {
-            auth.logout();
-            navigation.replace('Login');
+            setModalConfig({
+              title: 'Logout',
+              message: 'Are you sure you want to logout?',
+              confirmText: 'Logout',
+              cancelText: 'Cancel',
+              isDestructive: true,
+              onConfirm: () => {
+                setModalVisible(false);
+                auth.logout();
+                navigation.replace('Login');
+              },
+              onCancel: () => setModalVisible(false),
+            });
+            setModalVisible(true);
           }}
           style={styles.logoutButton}>
           <Icon name="logout" size={24} color="#fff" />
@@ -411,7 +428,7 @@ const HomeScreen = ({navigation}) => {
       <View style={[styles.footer, {backgroundColor: currentColors.footer}]}>
         <Text
           style={[styles.buildNumber, {color: currentColors.secondaryText}]}>
-          Build {BUILD_NUMBER}
+          Version {buildNumber}
         </Text>
         <TouchableOpacity onPress={handleFeedbackPress}>
           <Text style={[styles.feedbackLink, {color: currentColors.primary}]}>
@@ -419,6 +436,16 @@ const HomeScreen = ({navigation}) => {
           </Text>
         </TouchableOpacity>
       </View>
+      <CustomModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm || (() => setModalVisible(false))}
+        onCancel={modalConfig.onCancel}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        isDestructive={modalConfig.isDestructive}
+      />
     </View>
   );
 };

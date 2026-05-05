@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,11 @@ import {
   PermissionsAndroid,
   BackHandler,
   StatusBar,
-  Alert,
 } from 'react-native';
-import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
+import CustomModal from '../components/CustomModal';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {auth} from '../utils/auth';
+import { auth } from '../utils/auth';
 import {
   storage,
   TWO_HOURS,
@@ -33,8 +33,9 @@ import {
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-const NewEntryScreen = ({navigation, route}) => {
-  const {mode} = route.params;
+const NewEntryScreen = ({ navigation, route }) => {
+  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+  const { mode } = route.params;
 
   // Color schemes
   const colors = {
@@ -80,13 +81,23 @@ const NewEntryScreen = ({navigation, route}) => {
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState(null);
   const [destructTime, setDestructTime] = useState(0);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'OK',
+    cancelText: 'Cancel',
+    isDestructive: false,
+  });
 
   const destructTimeOptions = [
-    {label: 'Never', value: 0},
-    {label: '2 Hours', value: TWO_HOURS},
-    {label: '1 Day', value: MILLISECONDS_PER_DAY},
-    {label: '7 Days', value: 7 * MILLISECONDS_PER_DAY},
-    {label: '30 Days', value: 30 * MILLISECONDS_PER_DAY},
+    { label: 'Never', value: 0 },
+    { label: '2 Hours', value: TWO_HOURS },
+    { label: '1 Day', value: MILLISECONDS_PER_DAY },
+    { label: '7 Days', value: 7 * MILLISECONDS_PER_DAY },
+    { label: '30 Days', value: 30 * MILLISECONDS_PER_DAY },
   ];
 
   // Media options
@@ -132,18 +143,19 @@ const NewEntryScreen = ({navigation, route}) => {
 
   const handleBackPress = () => {
     if (title.trim() || content.trim() || media.length > 0) {
-      Alert.alert(
-        'Discard Changes',
-        'You have unsaved changes. Are you sure you want to go back?',
-        [
-          {text: 'Cancel', style: 'cancel'},
-          {
-            text: 'Discard',
-            onPress: () => navigation.goBack(),
-            style: 'destructive',
-          },
-        ],
-      );
+      setModalConfig({
+        title: 'Discard Changes',
+        message: 'You have unsaved changes. Are you sure you want to go back?',
+        confirmText: 'Discard',
+        cancelText: 'Cancel',
+        isDestructive: true,
+        onConfirm: () => {
+          setModalVisible(false);
+          navigation.goBack();
+        },
+        onCancel: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return true;
     }
     navigation.goBack();
@@ -161,9 +173,9 @@ const NewEntryScreen = ({navigation, route}) => {
         ]);
         return (
           granted['android.permission.CAMERA'] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
+          PermissionsAndroid.RESULTS.GRANTED &&
           granted['android.permission.RECORD_AUDIO'] ===
-            PermissionsAndroid.RESULTS.GRANTED
+          PermissionsAndroid.RESULTS.GRANTED
         );
       } catch (err) {
         console.warn(err);
@@ -176,10 +188,12 @@ const NewEntryScreen = ({navigation, route}) => {
   // Capture photo from camera
   const capturePhoto = async () => {
     if (!(await requestCameraPermission())) {
-      Alert.alert(
-        'Permission denied',
-        'Camera access is required to take photos',
-      );
+      setModalConfig({
+        title: 'Permission denied',
+        message: 'Camera access is required to take photos',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return;
     }
 
@@ -198,7 +212,12 @@ const NewEntryScreen = ({navigation, route}) => {
       }
     } catch (error) {
       console.error('Error capturing photo:', error);
-      Alert.alert('Error', 'Failed to capture photo');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to capture photo',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } finally {
       setIsProcessingMedia(false);
     }
@@ -207,10 +226,12 @@ const NewEntryScreen = ({navigation, route}) => {
   // Capture video from camera
   const captureVideo = async () => {
     if (!(await requestCameraPermission())) {
-      Alert.alert(
-        'Permission denied',
-        'Camera and microphone access is required to record videos',
-      );
+      setModalConfig({
+        title: 'Permission denied',
+        message: 'Camera and microphone access is required to record videos',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return;
     }
 
@@ -229,7 +250,12 @@ const NewEntryScreen = ({navigation, route}) => {
       }
     } catch (error) {
       console.error('Error capturing video:', error);
-      Alert.alert('Error', 'Failed to record video');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to record video',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } finally {
       setIsProcessingMedia(false);
     }
@@ -256,7 +282,12 @@ const NewEntryScreen = ({navigation, route}) => {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to select image');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to select image',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } finally {
       setIsProcessingMedia(false);
     }
@@ -282,7 +313,12 @@ const NewEntryScreen = ({navigation, route}) => {
       }
     } catch (error) {
       console.error('Error picking video:', error);
-      Alert.alert('Error', 'Failed to select video');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to select video',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } finally {
       setIsProcessingMedia(false);
     }
@@ -351,7 +387,12 @@ const NewEntryScreen = ({navigation, route}) => {
       setIsRecording(true);
     } catch (error) {
       console.error('Error starting recording:', error);
-      Alert.alert('Error', 'Failed to start recording');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to start recording',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       setIsRecording(false);
     }
   };
@@ -422,7 +463,12 @@ const NewEntryScreen = ({navigation, route}) => {
   // Save entry
   const saveEntry = async () => {
     if (!title.trim() && !content.trim() && media.length === 0) {
-      navigation.goBack();
+      setModalConfig({
+        title: 'Empty Entry',
+        message: 'Please add some content or media before saving.',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return;
     }
 
@@ -438,10 +484,15 @@ const NewEntryScreen = ({navigation, route}) => {
 
       await storage.saveEntry(entry);
       auth.updateActivity();
-      navigation.navigate('Home', {refresh: true});
+      navigation.navigate('Home', { refresh: true });
     } catch (error) {
       console.error('Error saving entry:', error);
-      Alert.alert('Error', 'Failed to save entry');
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to save entry',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     }
   };
 
@@ -456,9 +507,9 @@ const NewEntryScreen = ({navigation, route}) => {
       return (
         <View
           key={index}
-          style={[styles.mediaItem, {backgroundColor: currentColors.mediaBg}]}>
+          style={[styles.mediaItem, { backgroundColor: currentColors.mediaBg }]}>
           <Image
-            source={{uri: item.uri}}
+            source={{ uri: item.uri }}
             style={styles.mediaPreview}
             resizeMode="cover"
           />
@@ -473,7 +524,7 @@ const NewEntryScreen = ({navigation, route}) => {
       return (
         <View
           key={index}
-          style={[styles.mediaItem, {backgroundColor: currentColors.mediaBg}]}>
+          style={[styles.mediaItem, { backgroundColor: currentColors.mediaBg }]}>
           <Icon name="videocam" size={hp(4)} color={currentColors.primary} />
           <TouchableOpacity
             style={styles.removeButton}
@@ -489,7 +540,7 @@ const NewEntryScreen = ({navigation, route}) => {
           key={index}
           style={[
             styles.audioContainer,
-            {backgroundColor: currentColors.mediaBg},
+            { backgroundColor: currentColors.mediaBg },
           ]}>
           <Icon name="audiotrack" size={24} color={currentColors.primary} />
           <View style={styles.audioControls}>
@@ -504,7 +555,7 @@ const NewEntryScreen = ({navigation, route}) => {
                 color={currentColors.primary}
               />
             </TouchableOpacity>
-            <Text style={[styles.audioTime, {color: currentColors.text}]}>
+            <Text style={[styles.audioTime, { color: currentColors.text }]}>
               {isCurrentlyPlaying ? playTime : duration}
             </Text>
           </View>
@@ -518,32 +569,33 @@ const NewEntryScreen = ({navigation, route}) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={[styles.container, {backgroundColor: currentColors.background}]}>
+    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
       <StatusBar
         barStyle={mode ? 'light-content' : 'light-content'}
         backgroundColor={currentColors.header}
       />
 
-      <View style={[styles.header, {backgroundColor: currentColors.header}]}>
+      <View style={[styles.header, { backgroundColor: currentColors.header, paddingTop: STATUS_BAR_HEIGHT }]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Icon name="arrow-back" size={hp(3)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>New Entry</Text>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>New Entry</Text>
         <TouchableOpacity
-          style={[styles.saveButton, {backgroundColor: '#FFFFFF'}]}
+          style={[styles.saveButton, { backgroundColor: '#FFFFFF' }]}
           onPress={saveEntry}>
-          <Text style={[styles.saveButtonText, {color: currentColors.primary}]}>
+          <Text style={[styles.saveButtonText, { color: currentColors.primary }]}>
             Save
           </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={[styles.content, {backgroundColor: currentColors.background}]}>
+        style={[styles.content, { backgroundColor: currentColors.background }]}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag" >
         <View style={styles.destructTimeContainer}>
-          <Text style={[styles.destructTimeLabel, {color: currentColors.text}]}>
+          <Text style={[styles.destructTimeLabel, { color: currentColors.text }]}>
             Self-destruct after:
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -552,7 +604,7 @@ const NewEntryScreen = ({navigation, route}) => {
                 key={index}
                 style={[
                   styles.destructTimeOption,
-                  {backgroundColor: currentColors.optionBg},
+                  { backgroundColor: currentColors.optionBg },
                   destructTime === option.value && {
                     backgroundColor: currentColors.optionSelectedBg,
                   },
@@ -561,8 +613,8 @@ const NewEntryScreen = ({navigation, route}) => {
                 <Text
                   style={[
                     styles.destructTimeText,
-                    {color: currentColors.text},
-                    destructTime === option.value && {color: '#FFFFFF'},
+                    { color: currentColors.text },
+                    destructTime === option.value && { color: '#FFFFFF' },
                   ]}>
                   {option.label}
                 </Text>
@@ -588,7 +640,7 @@ const NewEntryScreen = ({navigation, route}) => {
         />
 
         <TextInput
-          style={[styles.contentInput, {color: currentColors.text}]}
+          style={[styles.contentInput, { color: currentColors.text }]}
           placeholder="Write your thoughts..."
           placeholderTextColor={currentColors.secondaryText}
           value={content}
@@ -605,7 +657,7 @@ const NewEntryScreen = ({navigation, route}) => {
         )}
       </ScrollView>
 
-      <View style={[styles.toolbar, {backgroundColor: currentColors.toolbar}]}>
+      <View style={[styles.toolbar, { backgroundColor: currentColors.toolbar }]}>
         {/* Camera Photo */}
         <TouchableOpacity
           style={styles.toolbarButton}
@@ -682,8 +734,8 @@ const NewEntryScreen = ({navigation, route}) => {
               isRecording
                 ? '#FFFFFF'
                 : isProcessingMedia
-                ? currentColors.secondaryText
-                : '#FFFFFF'
+                  ? currentColors.secondaryText
+                  : '#FFFFFF'
             }
           />
         </TouchableOpacity>
@@ -696,7 +748,17 @@ const NewEntryScreen = ({navigation, route}) => {
           </View>
         )}
       </View>
-    </KeyboardAvoidingView>
+      <CustomModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm || (() => setModalVisible(false))}
+        onCancel={modalConfig.onCancel}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        isDestructive={modalConfig.isDestructive}
+      />
+    </View>
   );
 };
 
@@ -708,11 +770,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: hp(2),
+    paddingBottom: hp(2),
     paddingHorizontal: wp(5),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -734,7 +796,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: wp(5),
+    paddingBottom: hp(10),
   },
   destructTimeContainer: {
     marginBottom: hp(2),

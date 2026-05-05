@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,20 +13,29 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
-import {auth} from '../utils/auth';
+import { auth } from '../utils/auth';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const LoginScreen = ({navigation}) => {
+const LoginScreen = ({ navigation }) => {
+  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
+  const [selectedQuestion, setSelectedQuestion] = useState("What is your favorite childhood pet's name?");
+  const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [showSecurityQuestion, setShowSecurityQuestion] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const securityQuestions = [
+    "What is your favorite childhood pet's name?",
+    "What was the name of your first school?",
+    "What city were you born in?",
+  ];
 
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
@@ -42,7 +51,7 @@ const LoginScreen = ({navigation}) => {
       length: text.length >= 8,
       uppercase: /[A-Z]/.test(text),
       number: /[0-9]/.test(text),
-      specialChar: /[@$!%*?&]/.test(text),
+      specialChar: /[^A-Za-z0-9]/.test(text),
     });
   };
 
@@ -63,7 +72,7 @@ const LoginScreen = ({navigation}) => {
 
     // Password validation
     const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
     if (!password) {
       setError('Password is required');
       return;
@@ -92,6 +101,7 @@ const LoginScreen = ({navigation}) => {
       username.trim(),
       password,
       showSecurityQuestion ? securityAnswer.trim() : null,
+      showSecurityQuestion ? selectedQuestion : null,
     );
 
     if (result.needsSecuritySetup) {
@@ -109,14 +119,14 @@ const LoginScreen = ({navigation}) => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? hp(5) : 0}>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
-          <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
-          <View style={styles.innerContainer}>
+          <StatusBar barStyle="dark-content" backgroundColor="#000000" />
+          <View style={[styles.innerContainer, { paddingTop: STATUS_BAR_HEIGHT }]}>
             <View style={styles.headerContainer}>
               <Image
                 source={require('../assets/logo_v1.png')}
@@ -178,7 +188,7 @@ const LoginScreen = ({navigation}) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* Password checklist
+                {/* Password checklist */}
                 <View style={styles.validationContainer}>
                   <Text style={styles.validationText}>
                     {passwordValidations.length ? '✅' : '❌'} Minimum 8
@@ -188,10 +198,10 @@ const LoginScreen = ({navigation}) => {
                     {passwordValidations.uppercase ? '✅' : '❌'} At least 1
                     uppercase letter
                   </Text>
-                  <Text style={styles.validationText}>
+                  {/* <Text style={styles.validationText}>
                     {passwordValidations.lowercase ? '✅' : '❌'} At least 1
                     lowercase letter
-                  </Text>
+                  </Text> */}
                   <Text style={styles.validationText}>
                     {passwordValidations.number ? '✅' : '❌'} At least 1 number
                   </Text>
@@ -199,23 +209,53 @@ const LoginScreen = ({navigation}) => {
                     {passwordValidations.specialChar ? '✅' : '❌'} At least 1
                     special character
                   </Text>
-                </View> */}
+                </View>
 
                 {/* Security Question */}
                 {showSecurityQuestion && (
-                  <View>
-                    <View style={styles.inputWrapper}>
+                  <View style={styles.securityContainer}>
+                    <TouchableOpacity
+                      style={styles.inputWrapper}
+                      onPress={() => setShowQuestionPicker(!showQuestionPicker)}>
                       <Icon
                         name="shield-alt"
                         size={hp(2.5)}
                         color="#5C4E4E"
                         style={styles.inputIcon}
                       />
-                      <Text style={styles.securityQuestion}>
-                        What is your favorite childhood pet's name?
-                      </Text>
-                    </View>
+                      <View style={styles.questionSelector}>
+                        <Text style={styles.securityQuestionLabel}>Security Question:</Text>
+                        <Text style={styles.securityQuestionValue}>{selectedQuestion}</Text>
+                      </View>
+                      <Icon name="chevron-down" size={hp(2)} color="#5C4E4E" />
+                    </TouchableOpacity>
+
+                    {showQuestionPicker && (
+                      <View style={styles.questionPicker}>
+                        {securityQuestions.map((q, i) => (
+                          <TouchableOpacity
+                            key={i}
+                            style={styles.questionOption}
+                            onPress={() => {
+                              setSelectedQuestion(q);
+                              setShowQuestionPicker(false);
+                            }}>
+                            <Text style={[
+                              styles.questionOptionText,
+                              selectedQuestion === q && styles.selectedQuestionText
+                            ]}>{q}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+
                     <View style={styles.inputWrapper}>
+                      <Icon
+                        name="key"
+                        size={hp(2.5)}
+                        color="#5C4E4E"
+                        style={styles.inputIcon}
+                      />
                       <TextInput
                         style={styles.input}
                         placeholder="Enter security answer"
@@ -289,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(6),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     marginBottom: hp(2),
@@ -344,20 +384,41 @@ const styles = StyleSheet.create({
     fontSize: hp(1.8),
     textDecorationLine: 'underline',
   },
-  securityQuestion: {
-    fontSize: hp(1.8),
+  securityQuestionLabel: {
+    fontSize: hp(1.4),
     color: '#757575',
-    marginBottom: hp(1),
-    paddingHorizontal: wp(2),
+    marginBottom: hp(0.2),
   },
-  validationContainer: {
+  securityQuestionValue: {
+    fontSize: hp(1.8),
+    color: '#424242',
+    fontWeight: '500',
+  },
+  questionSelector: {
+    flex: 1,
+  },
+  questionPicker: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: wp(2),
+    padding: wp(2),
+    marginBottom: hp(2),
+  },
+  questionOption: {
+    paddingVertical: hp(1.2),
+    paddingHorizontal: wp(3),
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  questionOptionText: {
+    fontSize: hp(1.7),
+    color: '#616161',
+  },
+  selectedQuestionText: {
+    color: '#5C4E4E',
+    fontWeight: 'bold',
+  },
+  securityContainer: {
     marginTop: hp(1),
-    marginLeft: wp(2),
-  },
-  validationText: {
-    fontSize: hp(1.6),
-    color: '#555',
-    marginVertical: hp(0.3),
   },
 });
 

@@ -7,7 +7,7 @@ const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds
 export const auth = {
   lastActivity: null,
 
-  async login(username, password, securityAnswer = null) {
+  async login(username, password, securityAnswer = null, question = null) {
     try {
       const storedData = await AsyncStorage.getItem(AUTH_KEY);
       const credentials = storedData ? JSON.parse(storedData) : null;
@@ -15,50 +15,81 @@ export const auth = {
       if (!credentials) {
         // First time login - store credentials and security answer
         if (!securityAnswer) {
-          return { needsSecuritySetup: true };
+          return {needsSecuritySetup: true};
         }
-        
-        await AsyncStorage.setItem(
-          AUTH_KEY,
-          JSON.stringify({username, password}),
-        );
-        
-        await AsyncStorage.setItem(
-          SECURITY_KEY,
-          JSON.stringify({
-            question: "What is your favorite childhood pet's name?",
-            answer: securityAnswer
-          })
-        );
-        
-        this.lastActivity = new Date().getTime();
-        return { success: true };
+
+        await AsyncStorage.multiSet([
+          [AUTH_KEY, JSON.stringify({username, password})],
+          [
+            SECURITY_KEY,
+            JSON.stringify({
+              question: question || "What is your favorite childhood pet's name?",
+              answer: securityAnswer,
+            }),
+          ],
+        ]);
+
+        this.updateActivity();
+        return {success: true};
       }
 
       if (
         credentials.username === username &&
         credentials.password === password
       ) {
-        this.lastActivity = new Date().getTime();
-        return { success: true };
+        this.updateActivity();
+        return {success: true};
       }
 
-      return { success: false };
+      return {success: false};
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false };
+      return {success: false};
+    }
+  },
+
+  async isAuthenticated() {
+    const storedData = await AsyncStorage.getItem(AUTH_KEY);
+    return !!storedData && !this.isSessionExpired();
+  },
+
+  async getSecurityQuestion() {
+    try {
+      const data = await AsyncStorage.getItem(SECURITY_KEY);
+      return data ? JSON.parse(data).question : "What is your favorite childhood pet's name?";
+    } catch (error) {
+      return "What is your favorite childhood pet's name?";
+    }
+  },
+
+  async resetPassword(newPassword, answer) {
+    try {
+      if (await this.verifySecurityAnswer(answer)) {
+        const storedData = await AsyncStorage.getItem(AUTH_KEY);
+        if (!storedData) return false;
+
+        const credentials = JSON.parse(storedData);
+        credentials.password = newPassword;
+
+        await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(credentials));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Reset password error:', error);
+      return false;
     }
   },
 
   isSessionExpired() {
     if (!this.lastActivity) return true;
 
-    const currentTime = new Date().getTime();
+    const currentTime = Date.now();
     return currentTime - this.lastActivity > SESSION_TIMEOUT;
   },
 
   updateActivity() {
-    this.lastActivity = new Date().getTime();
+    this.lastActivity = Date.now();
   },
 
   async logout() {
