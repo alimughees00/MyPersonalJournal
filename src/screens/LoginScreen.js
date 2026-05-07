@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -13,19 +13,22 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { auth } from '../utils/auth';
+import {auth} from '../utils/auth';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const LoginScreen = ({ navigation }) => {
-  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+const LoginScreen = ({navigation}) => {
+  const STATUS_BAR_HEIGHT =
+    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [securityAnswer, setSecurityAnswer] = useState('');
-  const [selectedQuestion, setSelectedQuestion] = useState("What is your favorite childhood pet's name?");
+  const [selectedQuestion, setSelectedQuestion] = useState(
+    "What is your favorite childhood pet's name?",
+  );
   const [showQuestionPicker, setShowQuestionPicker] = useState(false);
   const [showSecurityQuestion, setShowSecurityQuestion] = useState(false);
   const [error, setError] = useState('');
@@ -33,8 +36,8 @@ const LoginScreen = ({ navigation }) => {
 
   const securityQuestions = [
     "What is your favorite childhood pet's name?",
-    "What was the name of your first school?",
-    "What city were you born in?",
+    'What was the name of your first school?',
+    'What city were you born in?',
   ];
 
   const [passwordValidations, setPasswordValidations] = useState({
@@ -125,8 +128,9 @@ const LoginScreen = ({ navigation }) => {
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
-          <StatusBar barStyle="dark-content" backgroundColor="#000000" />
-          <View style={[styles.innerContainer, { paddingTop: STATUS_BAR_HEIGHT }]}>
+          <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
+          <View
+            style={[styles.innerContainer, {paddingTop: STATUS_BAR_HEIGHT}]}>
             <View style={styles.headerContainer}>
               <Image
                 source={require('../assets/logo_v1.png')}
@@ -189,34 +193,35 @@ const LoginScreen = ({ navigation }) => {
                 </View>
 
                 {/* Password checklist */}
-                <View style={styles.validationContainer}>
-                  <Text style={styles.validationText}>
-                    {passwordValidations.length ? '✅' : '❌'} Minimum 8
-                    characters
-                  </Text>
-                  <Text style={styles.validationText}>
-                    {passwordValidations.uppercase ? '✅' : '❌'} At least 1
-                    uppercase letter
-                  </Text>
-                  {/* <Text style={styles.validationText}>
-                    {passwordValidations.lowercase ? '✅' : '❌'} At least 1
-                    lowercase letter
-                  </Text> */}
-                  <Text style={styles.validationText}>
-                    {passwordValidations.number ? '✅' : '❌'} At least 1 number
-                  </Text>
-                  <Text style={styles.validationText}>
-                    {passwordValidations.specialChar ? '✅' : '❌'} At least 1
-                    special character
-                  </Text>
-                </View>
+                {password.length > 0 && (
+                  <View style={styles.validationContainer}>
+                    <Text style={styles.validationText}>
+                      {passwordValidations.length ? '✅' : '❌'} Minimum 8
+                      characters
+                    </Text>
+                    <Text style={styles.validationText}>
+                      {passwordValidations.uppercase ? '✅' : '❌'} At least 1
+                      uppercase letter
+                    </Text>
+                    <Text style={styles.validationText}>
+                      {passwordValidations.number ? '✅' : '❌'} At least 1
+                      number
+                    </Text>
+                    <Text style={styles.validationText}>
+                      {passwordValidations.specialChar ? '✅' : '❌'} At least 1
+                      special character
+                    </Text>
+                  </View>
+                )}
 
                 {/* Security Question */}
                 {showSecurityQuestion && (
                   <View style={styles.securityContainer}>
                     <TouchableOpacity
                       style={styles.inputWrapper}
-                      onPress={() => setShowQuestionPicker(!showQuestionPicker)}>
+                      onPress={() =>
+                        setShowQuestionPicker(!showQuestionPicker)
+                      }>
                       <Icon
                         name="shield-alt"
                         size={hp(2.5)}
@@ -224,8 +229,12 @@ const LoginScreen = ({ navigation }) => {
                         style={styles.inputIcon}
                       />
                       <View style={styles.questionSelector}>
-                        <Text style={styles.securityQuestionLabel}>Security Question:</Text>
-                        <Text style={styles.securityQuestionValue}>{selectedQuestion}</Text>
+                        <Text style={styles.securityQuestionLabel}>
+                          Security Question:
+                        </Text>
+                        <Text style={styles.securityQuestionValue}>
+                          {selectedQuestion}
+                        </Text>
                       </View>
                       <Icon name="chevron-down" size={hp(2)} color="#5C4E4E" />
                     </TouchableOpacity>
@@ -240,10 +249,14 @@ const LoginScreen = ({ navigation }) => {
                               setSelectedQuestion(q);
                               setShowQuestionPicker(false);
                             }}>
-                            <Text style={[
-                              styles.questionOptionText,
-                              selectedQuestion === q && styles.selectedQuestionText
-                            ]}>{q}</Text>
+                            <Text
+                              style={[
+                                styles.questionOptionText,
+                                selectedQuestion === q &&
+                                  styles.selectedQuestionText,
+                              ]}>
+                              {q}
+                            </Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -280,9 +293,7 @@ const LoginScreen = ({ navigation }) => {
               <TouchableOpacity
                 style={styles.forgotPassword}
                 onPress={() => navigation.navigate('ForgotPassword')}>
-                <Text style={styles.forgotPasswordText}>
-                  Forgot Username/Password?
-                </Text>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -321,6 +332,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: hp(3),
     bottom: hp(2),
+    fontFamily: 'Inter-Bold',
   },
   formContainer: {
     backgroundColor: '#FFFFFF',
@@ -329,7 +341,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(6),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
     marginBottom: hp(2),

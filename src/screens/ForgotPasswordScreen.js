@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import { auth } from '../utils/auth';
+import {auth} from '../utils/auth';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomModal from '../components/CustomModal';
 import {
@@ -17,10 +17,13 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 
-const ForgotPasswordScreen = ({ navigation }) => {
-  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+const ForgotPasswordScreen = ({navigation}) => {
+  const STATUS_BAR_HEIGHT =
+    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
   const [securityAnswer, setSecurityAnswer] = useState('');
-  const [question, setQuestion] = useState("What is your favorite childhood pet's name?");
+  const [question, setQuestion] = useState(
+    "What is your favorite childhood pet's name?",
+  );
   const [error, setError] = useState('');
   const [isVerified, setIsVerified] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -33,7 +36,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
     specialChar: false,
   });
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalConfig, setModalConfig] = useState({ title: '', message: '' });
+  const [modalConfig, setModalConfig] = useState({title: '', message: ''});
 
   const validatePassword = text => {
     setNewPassword(text);
@@ -71,13 +74,16 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const handleResetPassword = async () => {
     setError('');
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
     if (!newPassword) {
       setError('New password is required');
       return;
     } else if (!passwordRegex.test(newPassword)) {
-      setError('Password must be at least 8 characters long and include uppercase, number, and special character');
+      setError(
+        'Password must be at least 8 characters long and include uppercase, number, and special character',
+      );
       return;
     }
 
@@ -86,7 +92,10 @@ const ForgotPasswordScreen = ({ navigation }) => {
       return;
     }
 
-    const success = await auth.resetPassword(newPassword, securityAnswer.trim());
+    const success = await auth.resetPassword(
+      newPassword,
+      securityAnswer.trim(),
+    );
     if (success) {
       setModalConfig({
         title: 'Success',
@@ -94,7 +103,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         onConfirm: () => {
           setModalVisible(false);
           navigation.navigate('Login');
-        }
+        },
       });
       setModalVisible(true);
     } else {
@@ -107,7 +116,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
-      <View style={[styles.innerContainer, { paddingTop: STATUS_BAR_HEIGHT }]}>
+      <View style={[styles.innerContainer, {paddingTop: STATUS_BAR_HEIGHT}]}>
         <View style={styles.headerContainer}>
           <Icon
             name="lock-reset"
@@ -127,8 +136,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
               <Text style={styles.question}>{question}</Text>
               <View style={styles.inputWrapper}>
                 <Icon
-                  name="help-outline"
-                  size={hp(2.5)}
+                  name="help-center"
+                  size={hp(3.0)}
                   color="#5C4E4E"
                   style={styles.inputIcon}
                 />
@@ -176,7 +185,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}>
                   <Icon
                     name={showPassword ? 'visibility' : 'visibility-off'}
                     size={hp(2.5)}
@@ -187,16 +197,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
               <View style={styles.validationContainer}>
                 <Text style={styles.validationText}>
-                  {passwordValidations.length ? '✅' : '❌'} Minimum 8 characters
+                  {passwordValidations.length ? '✅' : '❌'} Minimum 8
+                  characters
                 </Text>
                 <Text style={styles.validationText}>
-                  {passwordValidations.uppercase ? '✅' : '❌'} At least 1 uppercase letter
+                  {passwordValidations.uppercase ? '✅' : '❌'} At least 1
+                  uppercase letter
                 </Text>
                 <Text style={styles.validationText}>
                   {passwordValidations.number ? '✅' : '❌'} At least 1 number
                 </Text>
                 <Text style={styles.validationText}>
-                  {passwordValidations.specialChar ? '✅' : '❌'} At least 1 special character
+                  {passwordValidations.specialChar ? '✅' : '❌'} At least 1
+                  special character
                 </Text>
               </View>
 
@@ -216,7 +229,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}>
                   <Icon
                     name={showPassword ? 'visibility' : 'visibility-off'}
                     size={hp(2.5)}
@@ -297,7 +311,7 @@ const styles = StyleSheet.create({
     padding: wp(6),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
