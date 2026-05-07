@@ -1,4 +1,4 @@
-package com.myjournal
+package com.baltorotech.myjournal
 
 import android.webkit.WebView
 
