@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "991678216054",
+    "project_id": "my-journal-f4020",
+    "storage_bucket": "my-journal-f4020.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991678216054:android:b6b60678d401ffe82cac57",
+        "android_client_info": {
+          "package_name": "com.baltorotech.myjournal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3pqYF1Qd9PneRZWgGDhCbujf-P7MqMbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

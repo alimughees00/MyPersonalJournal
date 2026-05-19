@@ -17,6 +17,7 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
         // Add the built react-native gradle plugin JAR to classpath
         classpath(files("../node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/build/libs/react-native-gradle-plugin.jar"))
+        classpath("com.google.gms:google-services:4.4.2")
     }
 }
 

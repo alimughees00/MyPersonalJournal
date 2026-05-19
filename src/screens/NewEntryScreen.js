@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,9 @@ import {
   StatusBar,
 } from 'react-native';
 import CustomModal from '../components/CustomModal';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth } from '../utils/auth';
+import {auth} from '../utils/auth';
 import {
   storage,
   TWO_HOURS,
@@ -26,6 +26,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import RNFS from 'react-native-fs';
+import {ThemeContext} from '../context/ThemeContext';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -33,9 +34,11 @@ import {
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-const NewEntryScreen = ({ navigation, route }) => {
-  const STATUS_BAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight : 0;
-  const { mode } = route.params;
+const NewEntryScreen = ({navigation, route}) => {
+  const {isDarkMode} = useContext(ThemeContext);
+  const STATUS_BAR_HEIGHT =
+    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+  const mode = isDarkMode;
 
   // Color schemes
   const colors = {
@@ -93,11 +96,11 @@ const NewEntryScreen = ({ navigation, route }) => {
   });
 
   const destructTimeOptions = [
-    { label: 'Never', value: 0 },
-    { label: '2 Hours', value: TWO_HOURS },
-    { label: '1 Day', value: MILLISECONDS_PER_DAY },
-    { label: '7 Days', value: 7 * MILLISECONDS_PER_DAY },
-    { label: '30 Days', value: 30 * MILLISECONDS_PER_DAY },
+    {label: 'Never', value: 0},
+    {label: '2 Hours', value: TWO_HOURS},
+    {label: '1 Day', value: MILLISECONDS_PER_DAY},
+    {label: '7 Days', value: 7 * MILLISECONDS_PER_DAY},
+    {label: '30 Days', value: 30 * MILLISECONDS_PER_DAY},
   ];
 
   // Media options
@@ -173,9 +176,9 @@ const NewEntryScreen = ({ navigation, route }) => {
         ]);
         return (
           granted['android.permission.CAMERA'] ===
-          PermissionsAndroid.RESULTS.GRANTED &&
+            PermissionsAndroid.RESULTS.GRANTED &&
           granted['android.permission.RECORD_AUDIO'] ===
-          PermissionsAndroid.RESULTS.GRANTED
+            PermissionsAndroid.RESULTS.GRANTED
         );
       } catch (err) {
         console.warn(err);
@@ -484,7 +487,7 @@ const NewEntryScreen = ({ navigation, route }) => {
 
       await storage.saveEntry(entry);
       auth.updateActivity();
-      navigation.navigate('Home', { refresh: true });
+      navigation.navigate('Home', {refresh: true});
     } catch (error) {
       console.error('Error saving entry:', error);
       setModalConfig({
@@ -507,9 +510,9 @@ const NewEntryScreen = ({ navigation, route }) => {
       return (
         <View
           key={index}
-          style={[styles.mediaItem, { backgroundColor: currentColors.mediaBg }]}>
+          style={[styles.mediaItem, {backgroundColor: currentColors.mediaBg}]}>
           <Image
-            source={{ uri: item.uri }}
+            source={{uri: item.uri}}
             style={styles.mediaPreview}
             resizeMode="cover"
           />
@@ -524,7 +527,7 @@ const NewEntryScreen = ({ navigation, route }) => {
       return (
         <View
           key={index}
-          style={[styles.mediaItem, { backgroundColor: currentColors.mediaBg }]}>
+          style={[styles.mediaItem, {backgroundColor: currentColors.mediaBg}]}>
           <Icon name="videocam" size={hp(4)} color={currentColors.primary} />
           <TouchableOpacity
             style={styles.removeButton}
@@ -540,7 +543,7 @@ const NewEntryScreen = ({ navigation, route }) => {
           key={index}
           style={[
             styles.audioContainer,
-            { backgroundColor: currentColors.mediaBg },
+            {backgroundColor: currentColors.mediaBg},
           ]}>
           <Icon name="audiotrack" size={24} color={currentColors.primary} />
           <View style={styles.audioControls}>
@@ -555,7 +558,7 @@ const NewEntryScreen = ({ navigation, route }) => {
                 color={currentColors.primary}
               />
             </TouchableOpacity>
-            <Text style={[styles.audioTime, { color: currentColors.text }]}>
+            <Text style={[styles.audioTime, {color: currentColors.text}]}>
               {isCurrentlyPlaying ? playTime : duration}
             </Text>
           </View>
@@ -569,33 +572,41 @@ const NewEntryScreen = ({ navigation, route }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: currentColors.background }]}>
+    <View
+      style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
         barStyle={mode ? 'light-content' : 'light-content'}
         backgroundColor={currentColors.header}
       />
 
-      <View style={[styles.header, { backgroundColor: currentColors.header, paddingTop: STATUS_BAR_HEIGHT }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: currentColors.header,
+            paddingTop: STATUS_BAR_HEIGHT,
+          },
+        ]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
           <Icon name="arrow-back" size={hp(3)} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>New Entry</Text>
+        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>New Entry</Text>
         <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: '#FFFFFF' }]}
+          style={[styles.saveButton, {backgroundColor: '#FFFFFF'}]}
           onPress={saveEntry}>
-          <Text style={[styles.saveButtonText, { color: currentColors.primary }]}>
+          <Text style={[styles.saveButtonText, {color: currentColors.primary}]}>
             Save
           </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={[styles.content, { backgroundColor: currentColors.background }]}
+        style={[styles.content, {backgroundColor: currentColors.background}]}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag" >
+        keyboardDismissMode="on-drag">
         <View style={styles.destructTimeContainer}>
-          <Text style={[styles.destructTimeLabel, { color: currentColors.text }]}>
+          <Text style={[styles.destructTimeLabel, {color: currentColors.text}]}>
             Self-destruct after:
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -604,7 +615,7 @@ const NewEntryScreen = ({ navigation, route }) => {
                 key={index}
                 style={[
                   styles.destructTimeOption,
-                  { backgroundColor: currentColors.optionBg },
+                  {backgroundColor: currentColors.optionBg},
                   destructTime === option.value && {
                     backgroundColor: currentColors.optionSelectedBg,
                   },
@@ -613,8 +624,8 @@ const NewEntryScreen = ({ navigation, route }) => {
                 <Text
                   style={[
                     styles.destructTimeText,
-                    { color: currentColors.text },
-                    destructTime === option.value && { color: '#FFFFFF' },
+                    {color: currentColors.text},
+                    destructTime === option.value && {color: '#FFFFFF'},
                   ]}>
                   {option.label}
                 </Text>
@@ -640,7 +651,7 @@ const NewEntryScreen = ({ navigation, route }) => {
         />
 
         <TextInput
-          style={[styles.contentInput, { color: currentColors.text }]}
+          style={[styles.contentInput, {color: currentColors.text}]}
           placeholder="Write your thoughts..."
           placeholderTextColor={currentColors.secondaryText}
           value={content}
@@ -657,7 +668,7 @@ const NewEntryScreen = ({ navigation, route }) => {
         )}
       </ScrollView>
 
-      <View style={[styles.toolbar, { backgroundColor: currentColors.toolbar }]}>
+      <View style={[styles.toolbar, {backgroundColor: currentColors.toolbar}]}>
         {/* Camera Photo */}
         <TouchableOpacity
           style={styles.toolbarButton}
@@ -734,8 +745,8 @@ const NewEntryScreen = ({ navigation, route }) => {
               isRecording
                 ? '#FFFFFF'
                 : isProcessingMedia
-                  ? currentColors.secondaryText
-                  : '#FFFFFF'
+                ? currentColors.secondaryText
+                : '#FFFFFF'
             }
           />
         </TouchableOpacity>
@@ -774,7 +785,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },

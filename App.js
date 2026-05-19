@@ -4,6 +4,8 @@ import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/components/SplashScreen';
 import {enableScreens} from 'react-native-screens';
+import {notificationService} from './src/utils/NotificationService';
+import {ThemeProvider} from './src/context/ThemeContext';
 
 enableScreens();
 
@@ -12,19 +14,26 @@ const App = () => {
 
   useEffect(() => {
     LogBox.ignoreAllLogs();
+
+    // Initialize notifications
+    notificationService.initialize().catch(err => {
+      console.error('Failed to initialize notifications:', err);
+    });
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
-        {isLoading ? (
-          <SplashScreen onFinish={() => setIsLoading(false)} />
-        ) : (
-          <AppNavigator />
-        )}
-      </View>
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <View style={styles.container}>
+          <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
+          {isLoading ? (
+            <SplashScreen onFinish={() => setIsLoading(false)} />
+          ) : (
+            <AppNavigator />
+          )}
+        </View>
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 };
 

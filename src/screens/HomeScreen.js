@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,9 @@ import {storage} from '../utils/storage';
 import CustomModal from '../components/CustomModal';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DeviceInfo from 'react-native-device-info';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import {notificationService} from '../utils/NotificationService';
+import {ThemeContext} from '../context/ThemeContext';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
@@ -27,6 +30,8 @@ import {
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
 const HomeScreen = ({navigation, route}) => {
+  const {isDarkMode, toggleTheme, themeMode, setSystemTheme} =
+    useContext(ThemeContext);
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,9 +45,11 @@ const HomeScreen = ({navigation, route}) => {
     cancelText: 'Cancel',
     isDestructive: false,
   });
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isUserActive, setIsUserActive] = useState(true);
   const [buildNumber, setBuildNumber] = useState('');
+  const [reminderTime, setReminderTime] = useState(new Date());
+  const [isReminderEnabled, setIsReminderEnabled] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const appState = useRef(AppState.currentState);
   const isMounted = useRef(true);
   const STATUS_BAR_HEIGHT =
@@ -81,7 +88,20 @@ const HomeScreen = ({navigation, route}) => {
       const version = await DeviceInfo.getVersion();
       setBuildNumber(version);
     };
+
+    const loadReminder = async () => {
+      const reminder = await notificationService.getScheduledReminder();
+      if (reminder) {
+        const date = new Date();
+        date.setHours(reminder.hour);
+        date.setMinutes(reminder.minute);
+        setReminderTime(date);
+        setIsReminderEnabled(true);
+      }
+    };
+
     getVersion();
+    loadReminder();
   }, []);
 
   useEffect(() => {
@@ -287,34 +307,67 @@ const HomeScreen = ({navigation, route}) => {
           },
         ]}>
         <View style={styles.modeToggleContainer}>
-          <Switch
-            value={isDarkMode}
-            onValueChange={setIsDarkMode}
-            trackColor={{false: '#767577', true: '#988686'}}
-            thumbColor={isDarkMode ? '#5C4E4E' : '#f4f3f4'}
-          />
+          <TouchableOpacity
+            onPress={() => {
+              setModalConfig({
+                title: 'Theme Preference',
+                message: 'Choose how you want to display the app.',
+                confirmText: `${themeMode === 'light' ? '✓ ' : ''}Light`,
+                cancelText: `${themeMode === 'dark' ? '✓ ' : ''}Dark`,
+                isDestructive: false,
+                onConfirm: () => {
+                  if (themeMode !== 'light') toggleTheme();
+                  setModalVisible(false);
+                },
+                onCancel: () => {
+                  if (themeMode !== 'dark') toggleTheme();
+                  setModalVisible(false);
+                },
+              });
+              setModalVisible(true);
+            }}
+            style={{padding: 8}}>
+            <Icon
+              name={isDarkMode ? 'light-mode' : 'dark-mode'}
+              size={24}
+              color="#fff"
+            />
+          </TouchableOpacity>
         </View>
+
         <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>My Journal</Text>
-        <TouchableOpacity
-          onPress={() => {
-            setModalConfig({
-              title: 'Logout',
-              message: 'Are you sure you want to logout?',
-              confirmText: 'Logout',
-              cancelText: 'Cancel',
-              isDestructive: true,
-              onConfirm: () => {
-                setModalVisible(false);
-                auth.logout();
-                navigation.replace('Login');
-              },
-              onCancel: () => setModalVisible(false),
-            });
-            setModalVisible(true);
-          }}
-          style={styles.logoutButton}>
-          <Icon name="logout" size={24} color="#fff" />
-        </TouchableOpacity>
+        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <TouchableOpacity
+            onPress={() => setShowTimePicker(true)}
+            style={styles.settingsButton}>
+            <Icon
+              name="notifications-active"
+              size={24}
+              color={isReminderEnabled ? '#FFD700' : '#fff'}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              setModalConfig({
+                title: 'Logout',
+                message: 'Are you sure you want to logout?',
+                confirmText: 'Logout',
+                cancelText: 'Cancel',
+                isDestructive: true,
+                onConfirm: () => {
+                  setModalVisible(false);
+                  auth.logout();
+                  navigation.replace('Login');
+                },
+                onCancel: () => setModalVisible(false),
+              });
+              setModalVisible(true);
+            }}
+            style={styles.logoutButton}>
+            <Icon name="logout" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -446,6 +499,41 @@ const HomeScreen = ({navigation, route}) => {
         cancelText={modalConfig.cancelText}
         isDestructive={modalConfig.isDestructive}
       />
+      {showTimePicker && (
+        <DateTimePicker
+          value={reminderTime}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={async (event, selectedDate) => {
+            setShowTimePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setReminderTime(selectedDate);
+              setIsReminderEnabled(true);
+              await notificationService.scheduleDailyReminder(
+                selectedDate.getHours(),
+                selectedDate.getMinutes(),
+              );
+            } else if (event.type === 'dismissed') {
+              // Option to disable reminder?
+              setModalConfig({
+                title: 'Reminder',
+                message: 'Do you want to disable the daily reminder?',
+                confirmText: 'Disable',
+                cancelText: 'Keep',
+                isDestructive: true,
+                onConfirm: async () => {
+                  setModalVisible(false);
+                  setIsReminderEnabled(false);
+                  await notificationService.cancelReminder();
+                },
+                onCancel: () => setModalVisible(false),
+              });
+              setModalVisible(true);
+            }
+          }}
+        />
+      )}
     </View>
   );
 };
@@ -478,6 +566,11 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     padding: wp(1),
+    marginLeft: wp(3),
+  },
+  settingsButton: {
+    padding: wp(1),
+    marginLeft: wp(2),
   },
   loadingContainer: {
     flex: 1,

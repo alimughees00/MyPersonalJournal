@@ -133,9 +133,10 @@ const LoginScreen = ({navigation}) => {
             style={[styles.innerContainer, {paddingTop: STATUS_BAR_HEIGHT}]}>
             <View style={styles.headerContainer}>
               <Image
-                source={require('../assets/logo_v1.png')}
+                source={require('../assets/my-journal.png')}
                 style={styles.icon}
                 resizeMode="contain"
+                backgroundColor="transparent"
               />
               <Text style={styles.subtitle}>
                 Your personal space for thoughts
@@ -320,7 +321,11 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: hp(2),
+    marginBottom: hp(4),
+    backgroundColor: '#FFFFFF',
+    borderRadius: wp(4),
+    paddingVertical: hp(4),
+    paddingHorizontal: wp(6),
   },
   icon: {
     width: hp(30),
@@ -331,7 +336,7 @@ const styles = StyleSheet.create({
     color: '#757575',
     textAlign: 'center',
     lineHeight: hp(3),
-    bottom: hp(2),
+    top: hp(1),
     fontFamily: 'Inter-Bold',
   },
   formContainer: {

@@ -46,7 +46,7 @@ const SplashScreen = ({onFinish}) => {
         ]}>
         {/* <Icon name="book" size={hp(15)} color="#FFFFFF" /> */}
         <Image
-          source={require('../assets/logo_v1.png')}
+          source={require('../assets/my-journal.png')}
           style={styles.icon}
           resizeMode="contain"
         />
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     fontSize: hp(2.5),
     color: '#000',
     opacity: 0.8,
-    bottom: hp(2),
+    top: hp(3),
   },
   icon: {
     width: hp(25),

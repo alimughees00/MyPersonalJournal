@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -25,11 +25,14 @@ import {storage} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import {ThemeContext} from '../context/ThemeContext';
 
 const ViewEntryScreen = ({navigation, route}) => {
+  const {isDarkMode} = useContext(ThemeContext);
   const STATUS_BAR_HEIGHT =
     Platform.OS === 'android' ? StatusBar.currentHeight : 0;
-  const {entry, mode} = route.params;
+  const {entry} = route.params;
+  const mode = isDarkMode;
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
