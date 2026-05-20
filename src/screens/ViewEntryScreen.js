@@ -19,6 +19,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -26,11 +27,11 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import {ThemeContext} from '../context/ThemeContext';
+import {colors} from '../utils/colors';
 
 const ViewEntryScreen = ({navigation, route}) => {
   const {isDarkMode} = useContext(ThemeContext);
-  const STATUS_BAR_HEIGHT =
-    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+  const insets = useSafeAreaInsets();
   const {entry} = route.params;
   const mode = isDarkMode;
   const [isEditing, setIsEditing] = useState(false);
@@ -51,33 +52,6 @@ const ViewEntryScreen = ({navigation, route}) => {
     cancelText: 'Cancel',
     isDestructive: false,
   });
-  // Color schemes based on mode
-  const colors = {
-    light: {
-      background: '#F8F5F5',
-      card: '#FFFFFF',
-      text: '#424242',
-      secondaryText: '#757575',
-      primary: '#5C4E4E',
-      header: '#5C4E4E',
-      inputBg: '#FFFFFF',
-      mediaBg: '#F0F0F0',
-      audioIcon: '#5C4E4E',
-      deleteButton: '#D32F2F',
-    },
-    dark: {
-      background: '#121212',
-      card: '#1E1E1E',
-      text: '#E0E0E0',
-      secondaryText: '#A0A0A0',
-      primary: '#988686',
-      header: '#1E1E1E',
-      inputBg: '#2D2D2D',
-      mediaBg: '#2D2D2D',
-      audioIcon: '#988686',
-      deleteButton: '#B71C1C',
-    },
-  };
 
   const currentColors = mode ? colors.dark : colors.light;
 
@@ -243,11 +217,12 @@ const ViewEntryScreen = ({navigation, route}) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.OS === 'android' ? STATUS_BAR_HEIGHT : 0}
+      keyboardVerticalOffset={Platform.OS === 'android' ? insets.top : 0}
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
-        barStyle={mode ? 'light-content' : 'light-content'}
-        backgroundColor={currentColors.header}
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
       />
 
       {/* Updated Header to match NewEntryScreen */}
@@ -256,7 +231,7 @@ const ViewEntryScreen = ({navigation, route}) => {
           styles.header,
           {
             backgroundColor: currentColors.header,
-            paddingTop: STATUS_BAR_HEIGHT,
+            paddingTop: insets.top,
           },
         ]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>

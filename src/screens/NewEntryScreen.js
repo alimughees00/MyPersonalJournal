@@ -27,48 +27,19 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import RNFS from 'react-native-fs';
 import {ThemeContext} from '../context/ThemeContext';
+import {colors} from '../utils/colors';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
 const NewEntryScreen = ({navigation, route}) => {
   const {isDarkMode} = useContext(ThemeContext);
-  const STATUS_BAR_HEIGHT =
-    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
+  const insets = useSafeAreaInsets();
   const mode = isDarkMode;
-
-  // Color schemes
-  const colors = {
-    light: {
-      background: '#F8F5F5',
-      card: '#FFFFFF',
-      text: '#424242',
-      secondaryText: '#757575',
-      primary: '#5C4E4E',
-      header: '#5C4E4E',
-      inputBg: '#FFFFFF',
-      toolbar: '#5C4E4E',
-      mediaBg: '#F0F0F0',
-      optionBg: '#E0E0E0',
-      optionSelectedBg: '#5C4E4E',
-    },
-    dark: {
-      background: '#121212',
-      card: '#1E1E1E',
-      text: '#E0E0E0',
-      secondaryText: '#A0A0A0',
-      primary: '#988686',
-      header: '#1E1E1E',
-      inputBg: '#2D2D2D',
-      toolbar: '#1E1E1E',
-      mediaBg: '#2D2D2D',
-      optionBg: '#2D2D2D',
-      optionSelectedBg: '#988686',
-    },
-  };
 
   const currentColors = mode ? colors.dark : colors.light;
 
@@ -575,8 +546,9 @@ const NewEntryScreen = ({navigation, route}) => {
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar
-        barStyle={mode ? 'light-content' : 'light-content'}
-        backgroundColor={currentColors.header}
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
       />
 
       <View
@@ -584,7 +556,7 @@ const NewEntryScreen = ({navigation, route}) => {
           styles.header,
           {
             backgroundColor: currentColors.header,
-            paddingTop: STATUS_BAR_HEIGHT,
+            paddingTop: insets.top,
           },
         ]}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>

@@ -1,16 +1,17 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {
   View,
   Text,
   Modal,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {ThemeContext} from '../context/ThemeContext';
+import {colors} from '../utils/colors';
 
 const CustomModal = ({
   visible,
@@ -22,6 +23,9 @@ const CustomModal = ({
   cancelText = 'Cancel',
   isDestructive = false,
 }) => {
+  const {isDarkMode} = useContext(ThemeContext);
+  const currentColors = isDarkMode ? colors.dark : colors.light;
+
   return (
     <Modal
       transparent
@@ -29,24 +33,43 @@ const CustomModal = ({
       animationType="fade"
       onRequestClose={onCancel}>
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          {title ? <Text style={styles.title}>{title}</Text> : null}
-          <Text style={styles.message}>{message}</Text>
+        <View style={[styles.modalContainer, {backgroundColor: currentColors.card}]}>
+          {title ? (
+            <Text style={[styles.title, {color: currentColors.primary}]}>
+              {title}
+            </Text>
+          ) : null}
+          <Text style={[styles.message, {color: currentColors.text}]}>
+            {message}
+          </Text>
           
           <View style={styles.buttonContainer}>
             {onCancel && (
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[
+                  styles.button,
+                  styles.cancelButton,
+                  {
+                    backgroundColor: isDarkMode ? currentColors.mediaBg : '#F5F5F5',
+                    borderColor: isDarkMode ? 'transparent' : '#E0E0E0',
+                  },
+                ]}
                 onPress={onCancel}>
-                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+                <Text style={[styles.cancelButtonText, {color: currentColors.secondaryText}]}>
+                  {cancelText}
+                </Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               style={[
                 styles.button,
                 styles.confirmButton,
-                isDestructive && styles.destructiveButton,
-                !onCancel && { width: '100%' }
+                {
+                  backgroundColor: isDestructive
+                    ? currentColors.deleteButton
+                    : currentColors.primary,
+                },
+                !onCancel && {width: '100%'},
               ]}
               onPress={onConfirm}>
               <Text style={styles.confirmButtonText}>{confirmText}</Text>
@@ -67,26 +90,23 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: wp(85),
-    backgroundColor: '#FFFFFF',
     borderRadius: wp(4),
     padding: wp(6),
     alignItems: 'center',
     elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: {width: 0, height: 5},
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
   title: {
     fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#5C4E4E',
     marginBottom: hp(1.5),
     textAlign: 'center',
   },
   message: {
     fontSize: hp(2),
-    color: '#424242',
     textAlign: 'center',
     marginBottom: hp(3),
     lineHeight: hp(2.8),
@@ -103,16 +123,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: wp(35),
   },
-  confirmButton: {
-    backgroundColor: '#5C4E4E',
-  },
+  confirmButton: {},
   cancelButton: {
-    backgroundColor: '#F5F5F5',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  destructiveButton: {
-    backgroundColor: '#D32F2F',
   },
   confirmButtonText: {
     color: '#FFFFFF',
@@ -120,7 +133,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cancelButtonText: {
-    color: '#757575',
     fontSize: hp(2),
     fontWeight: '500',
   },

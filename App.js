@@ -1,17 +1,38 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {LogBox, StatusBar, StyleSheet, View} from 'react-native';
-import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/components/SplashScreen';
 import {enableScreens} from 'react-native-screens';
 import {notificationService} from './src/utils/NotificationService';
-import {ThemeProvider} from './src/context/ThemeContext';
+import {ThemeProvider, ThemeContext} from './src/context/ThemeContext';
+import {colors} from './src/utils/colors';
 
 enableScreens();
 
-const App = () => {
+// Inner component so it can consume ThemeContext for dynamic StatusBar
+const AppContent = () => {
+  const {isDarkMode} = useContext(ThemeContext);
+  const currentColors = isDarkMode ? colors.dark : colors.light;
   const [isLoading, setIsLoading] = useState(true);
 
+  return (
+    <View style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        translucent
+        backgroundColor="transparent"
+      />
+      {isLoading ? (
+        <SplashScreen onFinish={() => setIsLoading(false)} />
+      ) : (
+        <AppNavigator />
+      )}
+    </View>
+  );
+};
+
+const App = () => {
   useEffect(() => {
     LogBox.ignoreAllLogs();
 
@@ -24,14 +45,7 @@ const App = () => {
   return (
     <ThemeProvider>
       <SafeAreaProvider>
-        <View style={styles.container}>
-          <StatusBar barStyle="light-content" backgroundColor="#5C4E4E" />
-          {isLoading ? (
-            <SplashScreen onFinish={() => setIsLoading(false)} />
-          ) : (
-            <AppNavigator />
-          )}
-        </View>
+        <AppContent />
       </SafeAreaProvider>
     </ThemeProvider>
   );
@@ -40,7 +54,7 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#988686',
+    backgroundColor: '#F5EFF9',
   },
 });
 

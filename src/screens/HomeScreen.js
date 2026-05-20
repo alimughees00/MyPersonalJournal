@@ -10,9 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Image,
-  Switch,
   AppState,
-  Platform,
 } from 'react-native';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
@@ -22,10 +20,12 @@ import DeviceInfo from 'react-native-device-info';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {notificationService} from '../utils/NotificationService';
 import {ThemeContext} from '../context/ThemeContext';
+import {colors} from '../utils/colors';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
@@ -52,36 +52,7 @@ const HomeScreen = ({navigation, route}) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const appState = useRef(AppState.currentState);
   const isMounted = useRef(true);
-  const STATUS_BAR_HEIGHT =
-    Platform.OS === 'android' ? StatusBar.currentHeight : 0;
-
-  // Color schemes
-  const colors = {
-    light: {
-      background: '#F8F5F5',
-      card: '#FFFFFF',
-      text: '#424242',
-      secondaryText: '#757575',
-      primary: '#5C4E4E',
-      header: '#5C4E4E',
-      emptyText: '#5C4E4E',
-      emptySubtext: '#757575',
-      footer: '#F8F5F5',
-      mediaBg: '#F0F0F0',
-    },
-    dark: {
-      background: '#121212',
-      card: '#1E1E1E',
-      text: '#E0E0E0',
-      secondaryText: '#A0A0A0',
-      primary: '#988686',
-      header: '#1E1E1E',
-      emptyText: '#988686',
-      emptySubtext: '#A0A0A0',
-      footer: '#1E1E1E',
-      mediaBg: '#2D2D2D',
-    },
-  };
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const getVersion = async () => {
@@ -291,19 +262,22 @@ const HomeScreen = ({navigation, route}) => {
 
   useEffect(() => {
     StatusBar.setBarStyle('light-content', true);
-    StatusBar.setBackgroundColor(currentColors.header, true);
   }, [isDarkMode]);
 
   return (
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
-      {Platform.OS === 'ios' && <StatusBar barStyle="light-content" />}
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
       <View
         style={[
           styles.header,
           {
             backgroundColor: currentColors.header,
-            paddingTop: STATUS_BAR_HEIGHT,
+            paddingTop: insets.top,
           },
         ]}>
         <View style={styles.modeToggleContainer}>

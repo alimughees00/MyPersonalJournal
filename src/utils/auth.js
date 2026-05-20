@@ -23,7 +23,8 @@ export const auth = {
           [
             SECURITY_KEY,
             JSON.stringify({
-              question: question || "What is your favorite childhood pet's name?",
+              question:
+                question || "What is your favorite childhood pet's name?",
               answer: securityAnswer,
             }),
           ],
@@ -56,7 +57,9 @@ export const auth = {
   async getSecurityQuestion() {
     try {
       const data = await AsyncStorage.getItem(SECURITY_KEY);
-      return data ? JSON.parse(data).question : "What is your favorite childhood pet's name?";
+      return data
+        ? JSON.parse(data).question
+        : "What is your favorite childhood pet's name?";
     } catch (error) {
       return "What is your favorite childhood pet's name?";
     }
@@ -100,7 +103,7 @@ export const auth = {
     try {
       await AsyncStorage.setItem(
         'security_qa',
-        JSON.stringify({ question, answer })
+        JSON.stringify({question, answer}),
       );
       return true;
     } catch (error) {
@@ -113,8 +116,8 @@ export const auth = {
     try {
       const securityData = await AsyncStorage.getItem('security_qa');
       if (!securityData) return false;
-      
-      const { answer: storedAnswer } = JSON.parse(securityData);
+
+      const {answer: storedAnswer} = JSON.parse(securityData);
       return storedAnswer === answer;
     } catch (error) {
       console.error('Error verifying security answer:', error);
@@ -128,5 +131,16 @@ export const auth = {
       return JSON.parse(storedData);
     }
     return null;
-  }
+  },
+
+  async getUsername() {
+    try {
+      const storedData = await AsyncStorage.getItem(AUTH_KEY);
+      if (!storedData) return null;
+      return JSON.parse(storedData).username;
+    } catch (error) {
+      console.error('Error getting username:', error);
+      return null;
+    }
+  },
 };
