@@ -1,4 +1,4 @@
-import React, {useState, useContext, useCallback} from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,25 +13,24 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
-import {auth} from '../utils/auth';
+import { auth } from '../utils/auth';
 import Icon from 'react-native-vector-icons/FontAwesome5';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ThemeContext} from '../context/ThemeContext';
-import {colors} from '../utils/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemeContext } from '../context/ThemeContext';
+import { colors } from '../utils/colors';
 
-// ✅ Fix #11 — moved outside component, not recreated on every render
 const SECURITY_QUESTIONS = [
   "What is your favorite childhood pet's name?",
   'What was the name of your first school?',
   'What city were you born in?',
 ];
 
-const LoginScreen = ({navigation}) => {
-  const {isDarkMode} = useContext(ThemeContext);
+const LoginScreen = ({ navigation }) => {
+  const { isDarkMode } = useContext(ThemeContext);
   const currentColors = isDarkMode ? colors.dark : colors.light;
   const insets = useSafeAreaInsets();
 
@@ -46,10 +45,8 @@ const LoginScreen = ({navigation}) => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ Fix #3/#5/#12 — removed passwordValidations state and validatePassword,
   // login screen just sets password directly
   const handleLogin = useCallback(async () => {
-    // ✅ Fix #4 — always clear error before each attempt
     setError('');
 
     const usernameRegex = /^[a-zA-Z0-9._]{3,}$/;
@@ -89,7 +86,6 @@ const LoginScreen = ({navigation}) => {
     );
 
     if (result.needsSecuritySetup) {
-      // ✅ Fix #4 — clear error cleanly before showing security form
       setError('');
       setShowSecurityQuestion(true);
       return;
@@ -110,11 +106,10 @@ const LoginScreen = ({navigation}) => {
   ]);
 
   return (
-    // ✅ Fix #13 — StatusBar moved outside ScrollView, sits at top level
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={[styles.container, {backgroundColor: currentColors.background}]} // ✅ Fix #1
+        style={[styles.container, { backgroundColor: currentColors.background }]}
         keyboardVerticalOffset={Platform.OS === 'ios' ? hp(5) : 0}>
         <StatusBar
           barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -124,8 +119,7 @@ const LoginScreen = ({navigation}) => {
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
-          <View style={[styles.innerContainer, {paddingTop: insets.top}]}>
-            {/* ✅ Fix #6/#7 — single unified card; inner views have no background */}
+          <View style={[styles.innerContainer, { paddingTop: insets.top }]}>
             <View
               style={[
                 styles.card,
@@ -138,14 +132,13 @@ const LoginScreen = ({navigation}) => {
               <View style={styles.headerContainer}>
                 <Image
                   source={require('../assets/my-journal.png')}
-                  style={styles.icon} // ✅ Fix #8 — use wp for width in styles below
+                  style={styles.icon}
                   resizeMode="contain"
                 />
-                {/* ✅ Fix #9 — replaced top: hp(1) with marginTop */}
                 <Text
                   style={[
                     styles.subtitle,
-                    {color: currentColors.secondaryText},
+                    { color: currentColors.secondaryText },
                   ]}>
                   Your personal space for thoughts
                 </Text>
@@ -160,7 +153,7 @@ const LoginScreen = ({navigation}) => {
                   <View
                     style={[
                       styles.inputWrapper,
-                      {borderBottomColor: isDarkMode ? '#3D2F54' : '#E0E0E0'},
+                      { borderBottomColor: isDarkMode ? '#3D2F54' : '#E0E0E0' },
                     ]}>
                     <Icon
                       name="user"
@@ -169,7 +162,7 @@ const LoginScreen = ({navigation}) => {
                       style={styles.inputIcon}
                     />
                     <TextInput
-                      style={[styles.input, {color: currentColors.text}]}
+                      style={[styles.input, { color: currentColors.text }]}
                       placeholder="Username"
                       placeholderTextColor={isDarkMode ? '#7E7090' : '#9E9E9E'}
                       value={username}
@@ -184,7 +177,7 @@ const LoginScreen = ({navigation}) => {
                   <View
                     style={[
                       styles.inputWrapper,
-                      {borderBottomColor: isDarkMode ? '#3D2F54' : '#E0E0E0'},
+                      { borderBottomColor: isDarkMode ? '#3D2F54' : '#E0E0E0' },
                     ]}>
                     <Icon
                       name="lock"
@@ -193,11 +186,11 @@ const LoginScreen = ({navigation}) => {
                       style={styles.inputIcon}
                     />
                     <TextInput
-                      style={[styles.input, {color: currentColors.text}]}
+                      style={[styles.input, { color: currentColors.text }]}
                       placeholder="Password"
                       placeholderTextColor={isDarkMode ? '#7E7090' : '#9E9E9E'}
                       value={password}
-                      onChangeText={setPassword} // ✅ Fix #3/#5 — just setPassword, no validation
+                      onChangeText={setPassword}
                       secureTextEntry={!showPassword}
                       autoCapitalize="none"
                     />
@@ -211,8 +204,6 @@ const LoginScreen = ({navigation}) => {
                       />
                     </TouchableOpacity>
                   </View>
-
-                  {/* ✅ Fix #3/#12 — password checklist removed entirely from login screen */}
 
                   {/* Security Question */}
                   {showSecurityQuestion && (
@@ -237,14 +228,14 @@ const LoginScreen = ({navigation}) => {
                           <Text
                             style={[
                               styles.securityQuestionLabel,
-                              {color: currentColors.secondaryText},
+                              { color: currentColors.secondaryText },
                             ]}>
                             Security Question:
                           </Text>
                           <Text
                             style={[
                               styles.securityQuestionValue,
-                              {color: currentColors.primary},
+                              { color: currentColors.primary },
                             ]}>
                             {selectedQuestion}
                           </Text>
@@ -284,10 +275,10 @@ const LoginScreen = ({navigation}) => {
                               <Text
                                 style={[
                                   styles.questionOptionText,
-                                  {color: currentColors.secondaryText},
+                                  { color: currentColors.secondaryText },
                                   selectedQuestion === q && [
                                     styles.selectedQuestionText,
-                                    {color: currentColors.primary},
+                                    { color: currentColors.primary },
                                   ],
                                 ]}>
                                 {q}
@@ -313,7 +304,7 @@ const LoginScreen = ({navigation}) => {
                           style={styles.inputIcon}
                         />
                         <TextInput
-                          style={[styles.input, {color: currentColors.text}]}
+                          style={[styles.input, { color: currentColors.text }]}
                           placeholder="Enter security answer"
                           placeholderTextColor={
                             isDarkMode ? '#7E7090' : '#9E9E9E'
@@ -332,7 +323,7 @@ const LoginScreen = ({navigation}) => {
                     <Text
                       style={[
                         styles.errorText,
-                        {color: currentColors.deleteButton},
+                        { color: currentColors.deleteButton },
                       ]}>
                       {error}
                     </Text>
@@ -342,7 +333,7 @@ const LoginScreen = ({navigation}) => {
                 <TouchableOpacity
                   style={[
                     styles.button,
-                    {backgroundColor: currentColors.primary},
+                    { backgroundColor: currentColors.primary },
                   ]}
                   onPress={handleLogin}>
                   <Text style={styles.buttonText}>Sign In</Text>
@@ -354,7 +345,7 @@ const LoginScreen = ({navigation}) => {
                   <Text
                     style={[
                       styles.forgotPasswordText,
-                      {color: currentColors.secondaryText},
+                      { color: currentColors.secondaryText },
                     ]}>
                     Forgot Password?
                   </Text>
@@ -383,12 +374,11 @@ const styles = StyleSheet.create({
     paddingBottom: hp(5),
   },
 
-  // ✅ Fix #6/#7 — unified card replaces separate headerContainer + formContainer backgrounds
   card: {
     borderRadius: wp(4),
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     overflow: 'hidden',
@@ -401,13 +391,11 @@ const styles = StyleSheet.create({
     paddingBottom: hp(2),
   },
 
-  // ✅ Fix #8 — wp for width, hp for height
   icon: {
     width: wp(55),
     height: hp(20),
   },
 
-  // ✅ Fix #9 — marginTop instead of top
   subtitle: {
     fontSize: hp(2),
     textAlign: 'center',

@@ -1,3 +1,4 @@
+import firebase from '@react-native-firebase/app';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance, TriggerType, RepeatFrequency } from '@notifee/react-native';
 import { Platform } from 'react-native';
@@ -8,7 +9,18 @@ class NotificationService {
     this.channelId = 'journal-reminders';
   }
 
+  ensureFirebaseInitialized() {
+    if (!firebase.apps.length) {
+      try {
+        firebase.initializeApp();
+      } catch (error) {
+        console.warn('Firebase initialization warning:', error);
+      }
+    }
+  }
+
   async initialize() {
+    this.ensureFirebaseInitialized();
     await this.createChannel();
     await this.requestPermission();
     this.setupListeners();
@@ -27,22 +39,32 @@ class NotificationService {
   }
 
   async requestPermission() {
-    const authStatus = await messaging().requestPermission();
-    const enabled =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+    try {
+      this.ensureFirebaseInitialized();
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-    if (enabled) {
-      console.log('Authorization status:', authStatus);
-      await this.getFcmToken();
+      if (enabled) {
+        console.log('Authorization status:', authStatus);
+        await this.getFcmToken();
+      }
+    } catch (error) {
+      console.warn('Messaging permission error:', error);
     }
     
     // Also request Notifee permission for local notifications (Android 13+)
-    await notifee.requestPermission();
+    try {
+      await notifee.requestPermission();
+    } catch (error) {
+      console.warn('Notifee permission error:', error);
+    }
   }
 
   async getFcmToken() {
     try {
+      this.ensureFirebaseInitialized();
       const token = await messaging().getToken();
       if (token) {
         console.log('FCM Token:', token);
@@ -56,24 +78,30 @@ class NotificationService {
   }
 
   setupListeners() {
-    // Foreground messages
-    messaging().onMessage(async remoteMessage => {
-      console.log('Foreground message received:', remoteMessage);
-      this.displayRemoteNotification(remoteMessage);
-    });
-
-    // Background/Quit state message opened
-    messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('Notification caused app to open from background:', remoteMessage);
-    });
-
-    messaging()
-      .getInitialNotification()
-      .then(remoteMessage => {
-        if (remoteMessage) {
-          console.log('Notification caused app to open from quit state:', remoteMessage);
-        }
+    try {
+      this.ensureFirebaseInitialized();
+      // Foreground messages
+      messaging().onMessage(async remoteMessage => {
+        console.log('Foreground message received:', remoteMessage);
+        this.displayRemoteNotification(remoteMessage);
       });
+
+      // Background/Quit state message opened
+      messaging().onNotificationOpenedApp(remoteMessage => {
+        console.log('Notification caused app to open from background:', remoteMessage);
+      });
+
+      messaging()
+        .getInitialNotification()
+        .then(remoteMessage => {
+          if (remoteMessage) {
+            console.log('Notification caused app to open from quit state:', remoteMessage);
+          }
+        })
+        .catch(err => console.warn('Error getting initial notification:', err));
+    } catch (error) {
+      console.warn('Error setting up messaging listeners:', error);
+    }
   }
 
   async displayRemoteNotification(remoteMessage) {
