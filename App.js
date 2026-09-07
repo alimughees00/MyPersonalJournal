@@ -3,9 +3,11 @@ import {LogBox, StatusBar, StyleSheet, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/components/SplashScreen';
+import PrivacyLockOverlay from './src/components/PrivacyLockOverlay';
 import {enableScreens} from 'react-native-screens';
 import {notificationService} from './src/utils/NotificationService';
 import {ThemeProvider, ThemeContext} from './src/context/ThemeContext';
+import {PrivacyLockProvider} from './src/context/PrivacyLockContext';
 import {colors} from './src/utils/colors';
 
 enableScreens();
@@ -26,7 +28,10 @@ const AppContent = () => {
       {isLoading ? (
         <SplashScreen onFinish={() => setIsLoading(false)} />
       ) : (
-        <AppNavigator />
+        <>
+          <AppNavigator />
+          <PrivacyLockOverlay />
+        </>
       )}
     </View>
   );
@@ -44,9 +49,11 @@ const App = () => {
 
   return (
     <ThemeProvider>
-      <SafeAreaProvider>
-        <AppContent />
-      </SafeAreaProvider>
+      <PrivacyLockProvider>
+        <SafeAreaProvider>
+          <AppContent />
+        </SafeAreaProvider>
+      </PrivacyLockProvider>
     </ThemeProvider>
   );
 };
