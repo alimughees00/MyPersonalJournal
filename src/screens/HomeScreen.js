@@ -30,7 +30,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
 const HomeScreen = ({navigation, route}) => {
-  const {isDarkMode, toggleTheme, themeMode, setSystemTheme} =
+  const {isDarkMode, toggleTheme, themeMode, setTheme, setSystemTheme} =
     useContext(ThemeContext);
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -290,11 +290,11 @@ const HomeScreen = ({navigation, route}) => {
                 cancelText: `${themeMode === 'dark' ? '✓ ' : ''}Dark`,
                 isDestructive: false,
                 onConfirm: () => {
-                  if (themeMode !== 'light') toggleTheme();
+                  setTheme('light');
                   setModalVisible(false);
                 },
                 onCancel: () => {
-                  if (themeMode !== 'dark') toggleTheme();
+                  setTheme('dark');
                   setModalVisible(false);
                 },
               });
