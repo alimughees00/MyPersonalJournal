@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useContext} from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,25 +12,24 @@ import {
   Image,
   AppState,
 } from 'react-native';
-import {auth} from '../utils/auth';
-import {storage} from '../utils/storage';
+import { auth } from '../utils/auth';
+import { storage } from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import DeviceInfo from 'react-native-device-info';
-import {ThemeContext} from '../context/ThemeContext';
-import {PrivacyLockContext} from '../context/PrivacyLockContext';
-import {colors} from '../utils/colors';
+import { ThemeContext } from '../context/ThemeContext';
+import { PrivacyLockContext } from '../context/PrivacyLockContext';
+import { colors } from '../utils/colors';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FEEDBACK_EMAIL = 'feedback@baltorotech.com';
 
-const HomeScreen = ({navigation, route}) => {
-  const {isDarkMode, toggleTheme} = useContext(ThemeContext);
-  const {isPrivacyLockEnabled, lock} = useContext(PrivacyLockContext);
-
+const HomeScreen = ({ navigation, route }) => {
+  const { isDarkMode, toggleTheme, themeMode, setTheme, setSystemTheme } =
+    useContext(ThemeContext);
   const [entries, setEntries] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,7 +141,7 @@ const HomeScreen = ({navigation, route}) => {
     if (firstMedia.type.startsWith('image/')) {
       return (
         <Image
-          source={{uri: firstMedia.uri}}
+          source={{ uri: firstMedia.uri }}
           style={styles.mediaPreview}
           resizeMode="cover"
         />
@@ -197,7 +196,7 @@ const HomeScreen = ({navigation, route}) => {
 
   return (
     <View
-      style={[styles.container, {backgroundColor: currentColors.background}]}>
+      style={[styles.container, { backgroundColor: currentColors.background }]}>
       <StatusBar
         barStyle="light-content"
         translucent
@@ -213,9 +212,25 @@ const HomeScreen = ({navigation, route}) => {
         ]}>
         <View style={styles.modeToggleContainer}>
           <TouchableOpacity
-            onPress={toggleTheme}
-            style={{padding: 8}}
-            accessibilityLabel="Toggle Theme">
+            onPress={() => {
+              setModalConfig({
+                title: 'Theme Preference',
+                message: 'Choose how you want to display the app.',
+                confirmText: `${themeMode === 'light' ? '✓ ' : ''}Light`,
+                cancelText: `${themeMode === 'dark' ? '✓ ' : ''}Dark`,
+                isDestructive: false,
+                onConfirm: () => {
+                  setTheme('light');
+                  setModalVisible(false);
+                },
+                onCancel: () => {
+                  setTheme('dark');
+                  setModalVisible(false);
+                },
+              });
+              setModalVisible(true);
+            }}
+            style={{ padding: 8 }}>
             <Icon
               name={isDarkMode ? 'light-mode' : 'dark-mode'}
               size={24}
@@ -224,8 +239,8 @@ const HomeScreen = ({navigation, route}) => {
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>My Journal</Text>
-        <View style={{flexDirection: 'row', alignItems: 'center'}}>
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>My Journal</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {isPrivacyLockEnabled && (
             <TouchableOpacity
               onPress={lock}
@@ -248,7 +263,7 @@ const HomeScreen = ({navigation, route}) => {
         <View
           style={[
             styles.loadingContainer,
-            {backgroundColor: currentColors.background},
+            { backgroundColor: currentColors.background },
           ]}>
           <ActivityIndicator size="large" color={currentColors.primary} />
         </View>
@@ -256,9 +271,9 @@ const HomeScreen = ({navigation, route}) => {
         <FlatList
           data={entries}
           showsVerticalScrollIndicator={false}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TouchableOpacity
-              style={[styles.entryCard, {backgroundColor: currentColors.card}]}
+              style={[styles.entryCard, { backgroundColor: currentColors.card }]}
               onPress={() =>
                 navigation.navigate('ViewEntry', {
                   entry: item,
@@ -269,7 +284,7 @@ const HomeScreen = ({navigation, route}) => {
                 <Text
                   style={[
                     styles.entryDate,
-                    {color: currentColors.secondaryText},
+                    { color: currentColors.secondaryText },
                   ]}>
                   {new Date(item.date).toLocaleDateString()}
                 </Text>
@@ -277,7 +292,7 @@ const HomeScreen = ({navigation, route}) => {
                   <View
                     style={[
                       styles.expirationBadge,
-                      {backgroundColor: currentColors.primary},
+                      { backgroundColor: currentColors.primary },
                     ]}>
                     <Icon name="timer" size={14} color="#fff" />
                     <Text style={styles.expirationText}>
@@ -287,7 +302,7 @@ const HomeScreen = ({navigation, route}) => {
                 )}
               </View>
               {item.title && (
-                <Text style={[styles.entryTitle, {color: currentColors.text}]}>
+                <Text style={[styles.entryTitle, { color: currentColors.text }]}>
                   {item.title}
                 </Text>
               )}
@@ -295,7 +310,7 @@ const HomeScreen = ({navigation, route}) => {
                 <Text
                   style={[
                     styles.entryPreview,
-                    {color: currentColors.secondaryText},
+                    { color: currentColors.secondaryText },
                   ]}
                   numberOfLines={2}>
                   {item.content}
@@ -305,7 +320,7 @@ const HomeScreen = ({navigation, route}) => {
                 <View
                   style={[
                     styles.mediaContainer,
-                    {backgroundColor: currentColors.mediaBg},
+                    { backgroundColor: currentColors.mediaBg },
                   ]}>
                   {renderMediaPreview(item.media)}
                   {item.media.length > 1 && (
@@ -331,13 +346,13 @@ const HomeScreen = ({navigation, route}) => {
             <View style={styles.emptyContainer}>
               <Icon name="book" size={48} color={currentColors.emptyText} />
               <Text
-                style={[styles.emptyText, {color: currentColors.emptyText}]}>
+                style={[styles.emptyText, { color: currentColors.emptyText }]}>
                 No entries yet
               </Text>
               <Text
                 style={[
                   styles.emptySubtext,
-                  {color: currentColors.emptySubtext},
+                  { color: currentColors.emptySubtext },
                 ]}>
                 Tap the + button to create your first entry
               </Text>
@@ -347,18 +362,18 @@ const HomeScreen = ({navigation, route}) => {
       )}
 
       <TouchableOpacity
-        style={[styles.fab, {backgroundColor: currentColors.primary}]}
-        onPress={() => navigation.navigate('NewEntry', {mode: isDarkMode})}>
+        style={[styles.fab, { backgroundColor: currentColors.primary }]}
+        onPress={() => navigation.navigate('NewEntry', { mode: isDarkMode })}>
         <Icon name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
-      <View style={[styles.footer, {backgroundColor: currentColors.footer}]}>
+      <View style={[styles.footer, { backgroundColor: currentColors.footer }]}>
         <Text
-          style={[styles.buildNumber, {color: currentColors.secondaryText}]}>
+          style={[styles.buildNumber, { color: currentColors.secondaryText }]}>
           {/* Version {buildNumber} */}
         </Text>
         <TouchableOpacity onPress={handleFeedbackPress}>
-          <Text style={[styles.feedbackLink, {color: currentColors.primary}]}>
+          <Text style={[styles.feedbackLink, { color: currentColors.primary }]}>
             Send Feedback
           </Text>
         </TouchableOpacity>
@@ -379,7 +394,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: wp(5),
     elevation: 4,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
@@ -416,7 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: hp(2),
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
@@ -484,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 6,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },

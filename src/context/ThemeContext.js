@@ -40,24 +40,44 @@ export const ThemeProvider = ({children}) => {
     }
   }, [themeMode, systemTheme]);
 
+  const setTheme = useCallback(
+    async mode => {
+      try {
+        setThemeMode(mode);
+        if (mode === 'system') {
+          setIsDarkMode(systemTheme === 'dark');
+        } else {
+          setIsDarkMode(mode === 'dark');
+        }
+        await AsyncStorage.setItem('themeMode', mode);
+      } catch (error) {
+        console.error('Error saving theme preference:', error);
+      }
+    },
+    [systemTheme],
+  );
+
   const toggleTheme = useCallback(async () => {
     try {
-      const newMode = themeMode === 'light' ? 'dark' : 'light';
+      // Toggle based on current active visual mode
+      const newMode = isDarkMode ? 'light' : 'dark';
       setThemeMode(newMode);
+      setIsDarkMode(newMode === 'dark');
       await AsyncStorage.setItem('themeMode', newMode);
     } catch (error) {
       console.error('Error saving theme preference:', error);
     }
-  }, [themeMode]);
+  }, [isDarkMode]);
 
   const setSystemTheme = useCallback(async () => {
     try {
       setThemeMode('system');
+      setIsDarkMode(systemTheme === 'dark');
       await AsyncStorage.setItem('themeMode', 'system');
     } catch (error) {
       console.error('Error setting system theme:', error);
     }
-  }, []);
+  }, [systemTheme]);
 
   return (
     <ThemeContext.Provider
@@ -65,6 +85,7 @@ export const ThemeProvider = ({children}) => {
         isDarkMode,
         themeMode,
         toggleTheme,
+        setTheme,
         setSystemTheme,
         isThemeLoaded,
       }}>

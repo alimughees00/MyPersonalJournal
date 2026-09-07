@@ -136,23 +136,52 @@ const NewEntryScreen = ({navigation, route}) => {
     return true;
   };
 
-  // Request camera permissions
-  const requestCameraPermission = async () => {
+  // Request camera permissions (handles photo vs video requirements)
+  const requestCameraPermission = async (isVideo = false) => {
     if (Platform.OS === 'android') {
       try {
-        const granted = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        ]);
-        return (
-          granted['android.permission.CAMERA'] ===
-            PermissionsAndroid.RESULTS.GRANTED &&
-          granted['android.permission.RECORD_AUDIO'] ===
-            PermissionsAndroid.RESULTS.GRANTED
-        );
+        const permissions = [PermissionsAndroid.PERMISSIONS.CAMERA];
+        if (isVideo) {
+          permissions.push(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
+        }
+        if (Platform.Version < 33) {
+          permissions.push(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+        }
+        const granted = await PermissionsAndroid.requestMultiple(permissions);
+        const cameraGranted =
+          granted[PermissionsAndroid.PERMISSIONS.CAMERA] ===
+          PermissionsAndroid.RESULTS.GRANTED;
+        const audioGranted =
+          !isVideo ||
+          granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] ===
+            PermissionsAndroid.RESULTS.GRANTED;
+
+        return cameraGranted && audioGranted;
       } catch (err) {
-        console.warn(err);
+        console.warn('Error requesting camera permission:', err);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Request audio recording permissions
+  const requestAudioPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission',
+            message: 'This app needs access to your microphone to record audio.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn('Error requesting audio permission:', err);
         return false;
       }
     }
@@ -161,7 +190,7 @@ const NewEntryScreen = ({navigation, route}) => {
 
   // Capture photo from camera
   const capturePhoto = async () => {
-    if (!(await requestCameraPermission())) {
+    if (!(await requestCameraPermission(false))) {
       setModalConfig({
         title: 'Permission denied',
         message: 'Camera access is required to take photos',
@@ -199,7 +228,7 @@ const NewEntryScreen = ({navigation, route}) => {
 
   // Capture video from camera
   const captureVideo = async () => {
-    if (!(await requestCameraPermission())) {
+    if (!(await requestCameraPermission(true))) {
       setModalConfig({
         title: 'Permission denied',
         message: 'Camera and microphone access is required to record videos',
@@ -337,6 +366,17 @@ const NewEntryScreen = ({navigation, route}) => {
 
   // Audio recording functions
   const startRecording = async () => {
+    const hasPermission = await requestAudioPermission();
+    if (!hasPermission) {
+      setModalConfig({
+        title: 'Permission Denied',
+        message: 'Microphone access is required to record audio.',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
+      return;
+    }
+
     try {
       if (isPlaying) {
         await onStopPlay();
@@ -348,7 +388,10 @@ const NewEntryScreen = ({navigation, route}) => {
 
       setRecordTime('00:00'); // Set initial time ONCE before starting
 
-      const path = `${RNFS.DocumentDirectoryPath}/audio_${Date.now()}.mp3`;
+      const path = Platform.select({
+        ios: `audio_${Date.now()}.m4a`,
+        android: `${RNFS.DocumentDirectoryPath}/audio_${Date.now()}.mp4`,
+      });
       await audioRecorderPlayer.startRecorder(path);
 
       // Add listener and store ref
@@ -383,7 +426,7 @@ const NewEntryScreen = ({navigation, route}) => {
         setMedia(prev => [
           ...prev,
           {
-            type: 'audio/mpeg',
+            type: Platform.OS === 'ios' ? 'audio/m4a' : 'audio/mp4',
             uri: result,
           },
         ]);

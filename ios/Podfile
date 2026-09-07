@@ -1,6 +1,6 @@
 # Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
+'require.resolve(
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
@@ -17,6 +17,12 @@ end
 target 'MyJournal' do
   config = use_native_modules!
 
+  # Fix Swift static library integration for GoogleUtilities/RecaptchaInterop
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'AppCheckCore', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
@@ -31,5 +37,12 @@ target 'MyJournal' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+    installer.pods_project.targets.each do |target|
+      if target.name == 'fmt'
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
+      end
+    end
   end
 end
