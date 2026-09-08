@@ -253,7 +253,7 @@ const SettingsScreen = ({ navigation }) => {
     <View
       style={[styles.container, { backgroundColor: currentColors.background }]}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        barStyle={isDarkMode ? 'light-content' : 'light-content'}
         translucent
         backgroundColor="transparent"
       />
@@ -293,8 +293,7 @@ const SettingsScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        <View
-          style={[styles.card, { backgroundColor: currentColors.card }]}>
+        <View style={[styles.card, { backgroundColor: currentColors.card }]}>
           <View style={styles.settingRow}>
             <View style={styles.settingTextContainer}>
               <Text style={[styles.settingLabel, { color: currentColors.text }]}>
@@ -409,8 +408,7 @@ const SettingsScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        <View
-          style={[styles.card, { backgroundColor: currentColors.card }]}>
+        <View style={[styles.card, { backgroundColor: currentColors.card }]}>
           {accountUser ? (
             <>
               <View style={styles.settingRow}>
@@ -439,10 +437,7 @@ const SettingsScreen = ({ navigation }) => {
                 style={styles.actionRow}
                 onPress={() => navigation.navigate('ForgotPassword')}>
                 <Text
-                  style={[
-                    styles.actionLabel,
-                    { color: currentColors.primary },
-                  ]}>
+                  style={[styles.actionLabel, { color: currentColors.primary }]}>
                   Reset Password / Security
                 </Text>
                 <Icon
@@ -458,9 +453,7 @@ const SettingsScreen = ({ navigation }) => {
                   { backgroundColor: isDarkMode ? '#3D2F54' : '#F0E6FA' },
                 ]}
               />
-              <TouchableOpacity
-                style={styles.actionRow}
-                onPress={handleLogout}>
+              <TouchableOpacity style={styles.actionRow} onPress={handleLogout}>
                 <Text
                   style={[
                     styles.actionLabel,
@@ -529,8 +522,7 @@ const SettingsScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        <View
-          style={[styles.card, { backgroundColor: currentColors.card }]}>
+        <View style={[styles.card, { backgroundColor: currentColors.card }]}>
           {/* Theme Toggle */}
           <View style={styles.settingRow}>
             <View style={styles.settingTextContainer}>
@@ -587,7 +579,9 @@ const SettingsScreen = ({ navigation }) => {
             <Icon
               name="notifications"
               size={hp(2.5)}
-              color={isReminderEnabled ? '#FFD700' : currentColors.secondaryText}
+              color={
+                isReminderEnabled ? '#FFD700' : currentColors.secondaryText
+              }
             />
           </TouchableOpacity>
         </View>
@@ -606,8 +600,7 @@ const SettingsScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        <View
-          style={[styles.card, { backgroundColor: currentColors.card }]}>
+        <View style={[styles.card, { backgroundColor: currentColors.card }]}>
           <View style={styles.settingRow}>
             <Text style={[styles.settingLabel, { color: currentColors.text }]}>
               Version
@@ -634,11 +627,7 @@ const SettingsScreen = ({ navigation }) => {
             <Text style={[styles.actionLabel, { color: currentColors.primary }]}>
               Send Feedback
             </Text>
-            <Icon
-              name="email"
-              size={hp(2.2)}
-              color={currentColors.primary}
-            />
+            <Icon name="email" size={hp(2.2)} color={currentColors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -709,8 +698,7 @@ const SettingsScreen = ({ navigation }) => {
             ]}>
             <View style={styles.modalHeader}>
               <Icon name="lock" size={hp(3.5)} color={currentColors.primary} />
-              <Text
-                style={[styles.modalTitle, { color: currentColors.text }]}>
+              <Text style={[styles.modalTitle, { color: currentColors.text }]}>
                 {pinStep === 'enter' ? 'Set App PIN' : 'Confirm App PIN'}
               </Text>
               <Text
@@ -995,7 +983,9 @@ const SettingsScreen = ({ navigation }) => {
         visible={customModalVisible}
         title={modalConfig.title}
         message={modalConfig.message}
-        onConfirm={modalConfig.onConfirm || (() => setCustomModalVisible(false))}
+        onConfirm={
+          modalConfig.onConfirm || (() => setCustomModalVisible(false))
+        }
         onCancel={modalConfig.onCancel}
         confirmText={modalConfig.confirmText}
         cancelText={modalConfig.cancelText}
