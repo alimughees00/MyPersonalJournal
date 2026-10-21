@@ -219,11 +219,7 @@ const ViewEntryScreen = ({navigation, route}) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
       keyboardVerticalOffset={Platform.OS === 'android' ? insets.top : 0}
       style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar
-        barStyle="light-content"
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle="light-content" />
 
       {/* Updated Header to match NewEntryScreen */}
       <View

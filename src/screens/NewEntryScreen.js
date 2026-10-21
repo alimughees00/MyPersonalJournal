@@ -588,11 +588,7 @@ const NewEntryScreen = ({navigation, route}) => {
   return (
     <View
       style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar
-        barStyle="light-content"
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle="light-content" />
 
       <View
         style={[

@@ -133,11 +133,7 @@ const ForgotPasswordScreen = ({navigation}) => {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={[styles.container, {backgroundColor: currentColors.background}]}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
       <View style={[styles.innerContainer, {paddingTop: insets.top}]}>
         <View style={styles.headerContainer}>
           <Icon

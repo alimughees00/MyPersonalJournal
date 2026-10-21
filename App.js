@@ -1,6 +1,6 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {LogBox, StatusBar, StyleSheet, View} from 'react-native';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {SafeAreaProvider, useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/components/SplashScreen';
 import PrivacyLockOverlay from './src/components/PrivacyLockOverlay';
@@ -17,6 +17,7 @@ const AppContent = () => {
   const {isDarkMode} = useContext(ThemeContext);
   const currentColors = isDarkMode ? colors.dark : colors.light;
   const [isLoading, setIsLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, {backgroundColor: currentColors.background}]}>
@@ -29,7 +30,9 @@ const AppContent = () => {
         <SplashScreen onFinish={() => setIsLoading(false)} />
       ) : (
         <>
-          <AppNavigator />
+          <View style={{flex: 1, paddingBottom: insets.bottom}}>
+            <AppNavigator />
+          </View>
           <PrivacyLockOverlay />
         </>
       )}

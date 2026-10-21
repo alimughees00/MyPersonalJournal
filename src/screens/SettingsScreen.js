@@ -252,11 +252,7 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <View
       style={[styles.container, { backgroundColor: currentColors.background }]}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'light-content'}
-        translucent
-        backgroundColor="transparent"
-      />
+      <StatusBar barStyle="light-content" />
 
       {/* Header */}
       <View

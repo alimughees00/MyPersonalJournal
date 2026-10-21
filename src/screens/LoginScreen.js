@@ -117,11 +117,7 @@ const LoginScreen = ({navigation}) => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={[styles.container, {backgroundColor: currentColors.background}]}
         keyboardVerticalOffset={Platform.OS === 'ios' ? hp(5) : 0}>
-        <StatusBar
-          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-          translucent
-          backgroundColor="transparent"
-        />
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled">
