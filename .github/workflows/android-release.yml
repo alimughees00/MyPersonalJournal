@@ -56,6 +56,12 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Build React Native Gradle Plugin Jar
+        working-directory: node_modules/@react-native/gradle-plugin
+        run: |
+          chmod +x gradlew
+          ./gradlew :react-native-gradle-plugin:jar --no-daemon
+
       - name: Clean local OS-specific paths from Gradle properties
         run: |
           echo "Sanitizing gradle.properties..."
