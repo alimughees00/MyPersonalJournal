@@ -1,0 +1,116 @@
+name: Android Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Select build artifact type'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - aab
+          - apk
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-android:
+    name: Build Android Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Java JDK (Java 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Clean local OS-specific paths from Gradle properties
+        run: |
+          echo "Sanitizing gradle.properties..."
+          # Strip any potential hardcoded local machine paths or OS-specific properties
+          if [ -f android/gradle.properties ]; then
+            sed -i '/org\.gradle\.java\.home/d' android/gradle.properties
+            sed -i '/NODE_BINARY/d' android/gradle.properties
+            sed -i '/sdk\.dir/d' android/gradle.properties
+          fi
+          # Ensure no leftover local.properties overrides SDK on Linux runner
+          rm -f android/local.properties android/app/local.properties
+
+      - name: Reconstruct Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not configured in repository secrets!"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/myjournal-release-key.keystore
+          echo "Keystore successfully decoded to android/app/myjournal-release-key.keystore"
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android App Bundle (AAB)
+        if: ${{ github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
+        working-directory: android
+        env:
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'myjournal' }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'myjournal' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'myjournal-key-alias' }}
+        run: |
+          ./gradlew bundleRelease \
+            -PMYAPP_UPLOAD_STORE_PASSWORD="$STORE_PASS" \
+            -PMYAPP_UPLOAD_KEY_PASSWORD="$KEY_PASS" \
+            -PMYAPP_UPLOAD_KEY_ALIAS="$KEY_ALIAS" \
+            --no-daemon
+
+      - name: Build Android Package (APK)
+        if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
+        working-directory: android
+        env:
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'myjournal' }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'myjournal' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'myjournal-key-alias' }}
+        run: |
+          ./gradlew assembleRelease \
+            -PMYAPP_UPLOAD_STORE_PASSWORD="$STORE_PASS" \
+            -PMYAPP_UPLOAD_KEY_PASSWORD="$KEY_PASS" \
+            -PMYAPP_UPLOAD_KEY_ALIAS="$KEY_ALIAS" \
+            --no-daemon
+
+      - name: Upload Release AAB Artifact
+        if: ${{ (github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both' || github.event_name == 'push') && success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          retention-days: 14
+
+      - name: Upload Release APK Artifact
+        if: ${{ (github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push') && success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 14
