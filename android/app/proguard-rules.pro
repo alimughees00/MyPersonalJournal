@@ -43,3 +43,17 @@
 # Firebase
 -keep class com.google.firebase.** { *; }
 -dontwarn com.google.firebase.**
+
+# Audio Recorder Player
+-keep class com.dooboolab.audiorecorderplayer.** { *; }
+-dontwarn com.dooboolab.audiorecorderplayer.**
+
+# Google Sign-In
+-keep class com.reactnativegooglesignin.** { *; }
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+-dontwarn com.reactnativegooglesignin.**
+-dontwarn com.google.android.gms.auth.api.signin.**
+
+# DateTimePicker
+-keep class com.reactcommunity.rndatetimepicker.** { *; }
+-dontwarn com.reactcommunity.rndatetimepicker.**

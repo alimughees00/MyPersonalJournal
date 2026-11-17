@@ -49,6 +49,23 @@ jobs:
         run: |
           npm ci || npm install
 
+      - name: Patch dependencies for React Native 0.83 compatibility
+        run: |
+          echo "Patching react-native-audio-recorder-player for RN 0.83..."
+          FILE_AUDIO="node_modules/react-native-audio-recorder-player/android/src/main/java/com/dooboolab.audiorecorderplayer/RNAudioRecorderPlayerModule.kt"
+          if [ -f "$FILE_AUDIO" ]; then
+            sed -i 's/reactContext\.currentActivity/currentActivity/g' "$FILE_AUDIO"
+            sed -i 's/reactContext\.applicationContext/reactContext/g' "$FILE_AUDIO"
+            echo "Successfully patched RNAudioRecorderPlayerModule.kt"
+          fi
+
+          echo "Patching @react-native-community/datetimepicker for RN 0.83..."
+          FILE_DATE="node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNMaterialDatePicker.kt"
+          if [ -f "$FILE_DATE" ]; then
+            sed -i 's/reactContext\.currentActivity/reactContext.getCurrentActivity()/g' "$FILE_DATE"
+            echo "Successfully patched RNMaterialDatePicker.kt"
+          fi
+
       - name: Setup Java JDK (Java 17)
         uses: actions/setup-java@v4
         with:
