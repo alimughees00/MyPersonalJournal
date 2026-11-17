@@ -51,20 +51,31 @@ jobs:
 
       - name: Patch dependencies for React Native 0.83 compatibility
         run: |
-          echo "Patching react-native-audio-recorder-player for RN 0.83..."
-          FILE_AUDIO="node_modules/react-native-audio-recorder-player/android/src/main/java/com/dooboolab.audiorecorderplayer/RNAudioRecorderPlayerModule.kt"
-          if [ -f "$FILE_AUDIO" ]; then
-            sed -i 's/reactContext\.currentActivity/currentActivity/g' "$FILE_AUDIO"
-            sed -i 's/reactContext\.applicationContext/reactContext/g' "$FILE_AUDIO"
-            echo "Successfully patched RNAudioRecorderPlayerModule.kt"
-          fi
-
-          echo "Patching @react-native-community/datetimepicker for RN 0.83..."
-          FILE_DATE="node_modules/@react-native-community/datetimepicker/android/src/main/java/com/reactcommunity/rndatetimepicker/RNMaterialDatePicker.kt"
-          if [ -f "$FILE_DATE" ]; then
-            sed -i 's/reactContext\.currentActivity/reactContext.getCurrentActivity()/g' "$FILE_DATE"
-            echo "Successfully patched RNMaterialDatePicker.kt"
-          fi
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          function findAndPatch(dir) {
+            if (!fs.existsSync(dir)) return;
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const fullPath = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                findAndPatch(fullPath);
+              } else if (entry.name === 'RNAudioRecorderPlayerModule.kt') {
+                let code = fs.readFileSync(fullPath, 'utf8');
+                code = code.replace(/reactContext\.currentActivity/g, 'getCurrentActivity()');
+                code = code.replace(/mediaPlayer!!\.setDataSource\([^,]+,\s*Uri\.parse/g, 'mediaPlayer!!.setDataSource(reactContext, Uri.parse');
+                fs.writeFileSync(fullPath, code);
+                console.log('Successfully patched: ' + fullPath);
+              } else if (entry.name === 'RNMaterialDatePicker.kt') {
+                let code = fs.readFileSync(fullPath, 'utf8');
+                code = code.replace(/reactContext\.currentActivity/g, 'reactContext.getCurrentActivity()');
+                fs.writeFileSync(fullPath, code);
+                console.log('Successfully patched: ' + fullPath);
+              }
+            }
+          }
+          findAndPatch('node_modules');
+          "
 
       - name: Setup Java JDK (Java 17)
         uses: actions/setup-java@v4
