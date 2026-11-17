@@ -12,6 +12,16 @@ on:
           - both
           - aab
           - apk
+      version_code:
+        description: 'Version Code (leave blank to keep default in build.gradle)'
+        required: false
+        default: ''
+        type: string
+      version_name:
+        description: 'Version Name (e.g. 1.0.4, leave blank to keep default in build.gradle)'
+        required: false
+        default: ''
+        type: string
   push:
     tags:
       - 'v*.*.*'
@@ -79,11 +89,28 @@ jobs:
           STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'myjournal' }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'myjournal' }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'myjournal-key-alias' }}
+          INPUT_VERSION_CODE: ${{ github.event.inputs.version_code }}
+          INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
         run: |
+          VERSION_PROPS=""
+          if [ -n "$INPUT_VERSION_CODE" ]; then
+            echo "Overriding versionCode: $INPUT_VERSION_CODE"
+            VERSION_PROPS="$VERSION_PROPS -PversionCode=$INPUT_VERSION_CODE"
+          fi
+          if [ -n "$INPUT_VERSION_NAME" ]; then
+            echo "Overriding versionName: $INPUT_VERSION_NAME"
+            VERSION_PROPS="$VERSION_PROPS -PversionName=$INPUT_VERSION_NAME"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            echo "Using versionName from tag: $TAG_VERSION"
+            VERSION_PROPS="$VERSION_PROPS -PversionName=$TAG_VERSION"
+          fi
+
           ./gradlew bundleRelease \
             -PMYAPP_UPLOAD_STORE_PASSWORD="$STORE_PASS" \
             -PMYAPP_UPLOAD_KEY_PASSWORD="$KEY_PASS" \
             -PMYAPP_UPLOAD_KEY_ALIAS="$KEY_ALIAS" \
+            $VERSION_PROPS \
             --no-daemon
 
       - name: Build Android Package (APK)
@@ -93,11 +120,28 @@ jobs:
           STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'myjournal' }}
           KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD || 'myjournal' }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'myjournal-key-alias' }}
+          INPUT_VERSION_CODE: ${{ github.event.inputs.version_code }}
+          INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
         run: |
+          VERSION_PROPS=""
+          if [ -n "$INPUT_VERSION_CODE" ]; then
+            echo "Overriding versionCode: $INPUT_VERSION_CODE"
+            VERSION_PROPS="$VERSION_PROPS -PversionCode=$INPUT_VERSION_CODE"
+          fi
+          if [ -n "$INPUT_VERSION_NAME" ]; then
+            echo "Overriding versionName: $INPUT_VERSION_NAME"
+            VERSION_PROPS="$VERSION_PROPS -PversionName=$INPUT_VERSION_NAME"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG_VERSION="${GITHUB_REF_NAME#v}"
+            echo "Using versionName from tag: $TAG_VERSION"
+            VERSION_PROPS="$VERSION_PROPS -PversionName=$TAG_VERSION"
+          fi
+
           ./gradlew assembleRelease \
             -PMYAPP_UPLOAD_STORE_PASSWORD="$STORE_PASS" \
             -PMYAPP_UPLOAD_KEY_PASSWORD="$KEY_PASS" \
             -PMYAPP_UPLOAD_KEY_ALIAS="$KEY_ALIAS" \
+            $VERSION_PROPS \
             --no-daemon
 
       - name: Upload Release AAB Artifact
