@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef, useContext} from 'react';
 import {
   View,
   Text,
@@ -7,46 +7,97 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Image,
+  BackHandler,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import CustomModal from '../components/CustomModal';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import Video from 'react-native-video';
+import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import {ThemeContext} from '../context/ThemeContext';
+import {colors} from '../utils/colors';
 
 const ViewEntryScreen = ({navigation, route}) => {
+  const {isDarkMode} = useContext(ThemeContext);
+  const insets = useSafeAreaInsets();
   const {entry} = route.params;
+  const mode = isDarkMode;
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(entry.title);
   const [content, setContent] = useState(entry.content);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playTime, setPlayTime] = useState('00:00:00');
+  const [duration, setDuration] = useState('00:00:00');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+    confirmText: 'OK',
+    cancelText: 'Cancel',
+    isDestructive: false,
+  });
+
+  const currentColors = mode ? colors.dark : colors.light;
+
+  const audioPlayer = useRef(new AudioRecorderPlayer());
+
+  const handleBackPress = () => {
+    if (isEditing && (title !== entry.title || content !== entry.content)) {
+      setModalConfig({
+        title: 'Discard Changes',
+        message: 'You have unsaved changes. Are you sure you want to go back?',
+        confirmText: 'Discard',
+        cancelText: 'Cancel',
+        isDestructive: true,
+        onConfirm: () => {
+          setModalVisible(false);
+          navigation.goBack();
+        },
+        onCancel: () => setModalVisible(false),
+      });
+      setModalVisible(true);
+      return true;
+    }
+    navigation.goBack();
+    return true;
+  };
 
   useEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.headerButtons}>
-          {isEditing ? (
-            <TouchableOpacity onPress={handleSave} style={styles.headerButton}>
-              <Text style={styles.headerButtonText}>Save</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              onPress={() => setIsEditing(true)}
-              style={styles.headerButton}>
-              <Icon name="edit" size={24} color="#6c63ff" />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            onPress={handleDelete}
-            style={[styles.headerButton, styles.deleteButton]}>
-            <Icon name="delete" size={24} color="#ff4444" />
-          </TouchableOpacity>
-        </View>
-      ),
-    });
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress,
+    );
+    return () => backHandler.remove();
   }, [isEditing, title, content]);
 
-  const handleSave = async () => {
-    if (!title.trim() || !content.trim()) {
-      Alert.alert('Error', 'Title and content cannot be empty');
+  const saveChanges = async () => {
+    if (
+      !title.trim() &&
+      !content.trim() &&
+      (!entry.media || entry.media.length === 0)
+    ) {
+      setModalConfig({
+        title: 'Empty Entry',
+        message: 'Entry cannot be empty. Please add some content or media.',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
       return;
     }
 
@@ -56,142 +107,468 @@ const ViewEntryScreen = ({navigation, route}) => {
         title: title.trim(),
         content: content.trim(),
       };
-
-      const success = await storage.updateEntry(updatedEntry);
-      if (success) {
-        auth.updateActivity();
-        setIsEditing(false);
-        Alert.alert('Success', 'Entry updated successfully');
-      }
+      await storage.updateEntry(updatedEntry);
+      setIsEditing(false);
+      setModalConfig({
+        title: 'Success',
+        message: 'Entry updated successfully',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     } catch (error) {
-      console.error('Error saving entry:', error);
-      Alert.alert('Error', 'Failed to save changes');
+      console.error('Error updating entry:', error);
+      setModalConfig({
+        title: 'Error',
+        message: 'Failed to update entry',
+        onConfirm: () => setModalVisible(false),
+      });
+      setModalVisible(true);
     }
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Entry',
-      'Are you sure you want to delete this entry?',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const success = await storage.deleteEntry(entry.id);
-              if (success) {
-                auth.updateActivity();
-                navigation.goBack();
-              }
-            } catch (error) {
-              console.error('Error deleting entry:', error);
-              Alert.alert('Error', 'Failed to delete entry');
-            }
-          },
-        },
-      ],
+  const deleteEntry = async () => {
+    setModalConfig({
+      title: 'Delete Entry',
+      message: 'Are you sure you want to delete this entry?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await storage.deleteEntry(entry.id);
+          setModalVisible(false);
+          navigation.navigate('Home', {refresh: true});
+        } catch (error) {
+          console.error('Error deleting entry:', error);
+          setModalConfig({
+            title: 'Error',
+            message: 'Failed to delete entry',
+            onConfirm: () => setModalVisible(false),
+          });
+          setModalVisible(true);
+        }
+      },
+      onCancel: () => setModalVisible(false),
+    });
+    setModalVisible(true);
+  };
+
+  // Add this helper function:
+  const formatTime = millis => {
+    const totalSeconds = Math.floor((millis || 0) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return (
+      String(hours).padStart(2, '0') +
+      ':' +
+      String(minutes).padStart(2, '0') +
+      ':' +
+      String(seconds).padStart(2, '0')
     );
   };
 
+  // Update playAudio function:
+  const playAudio = async uri => {
+    try {
+      if (isPlaying) {
+        await audioPlayer.current.stopPlayer();
+        audioPlayer.current.removePlayBackListener();
+        setIsPlaying(false);
+        setPlayTime('00:00:00');
+        setDuration('00:00:00');
+        return;
+      }
+
+      setPlayTime('00:00:00');
+      setDuration('00:00:00');
+
+      await audioPlayer.current.startPlayer(uri);
+
+      audioPlayer.current.addPlayBackListener(e => {
+        setPlayTime(formatTime(e.currentPosition));
+        setDuration(formatTime(e.duration));
+        if (e.currentPosition >= e.duration) {
+          audioPlayer.current.stopPlayer();
+          audioPlayer.current.removePlayBackListener();
+          setIsPlaying(false);
+          setPlayTime('00:00:00');
+          setDuration(formatTime(e.duration));
+        }
+      });
+
+      setIsPlaying(true);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      setIsPlaying(false);
+      setPlayTime('00:00:00');
+      setDuration('00:00:00');
+    }
+  };
+
+  // Clean up playback listener on unmount:
+  useEffect(() => {
+    return () => {
+      audioPlayer.current.stopPlayer();
+      audioPlayer.current.removePlayBackListener();
+    };
+  }, []);
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.dateContainer}>
-        <Text style={styles.dateText}>
-          {new Date(entry.date).toLocaleDateString()} at{' '}
-          {new Date(entry.date).toLocaleTimeString()}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'android' ? insets.top : 0}
+      style={[styles.container, {backgroundColor: currentColors.background}]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Updated Header to match NewEntryScreen */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: currentColors.header,
+            paddingTop: insets.top,
+          },
+        ]}>
+        <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
+          <Icon name="arrow-back" size={hp(3)} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, {color: '#FFFFFF'}]}>
+          {isEditing ? 'Edit Entry' : 'View Entry'}
         </Text>
+        {isEditing ? (
+          <TouchableOpacity
+            style={[styles.saveButton, {backgroundColor: '#FFFFFF'}]}
+            onPress={saveChanges}>
+            <Text
+              style={[styles.saveButtonText, {color: currentColors.primary}]}>
+              Save
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerButtons}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {backgroundColor: mode ? currentColors.primary : '#988686'},
+              ]}
+              onPress={() => setIsEditing(true)}>
+              <Icon name="edit" size={hp(2.5)} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {backgroundColor: currentColors.deleteButton},
+              ]}
+              onPress={deleteEntry}>
+              <Icon name="delete" size={hp(2.5)} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
-      
-      {isEditing ? (
-        <View style={styles.editContainer}>
-          <TextInput
-            style={styles.titleInput}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Title"
-            maxLength={100}
-          />
-          <TextInput
-            style={styles.contentInput}
-            value={content}
-            onChangeText={setContent}
-            placeholder="Write your thoughts..."
-            multiline
-            textAlignVertical="top"
-          />
+
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}>
+        <View
+          style={[styles.dateContainer, {backgroundColor: currentColors.card}]}>
+          <Text style={[styles.dateText, {color: currentColors.secondaryText}]}>
+            {new Date(entry.date).toLocaleDateString()} at{' '}
+            {new Date(entry.date).toLocaleTimeString()}
+          </Text>
         </View>
-      ) : (
-        <View style={styles.viewContainer}>
-          <Text style={styles.titleText}>{title}</Text>
-          <Text style={styles.contentText}>{content}</Text>
-        </View>
-      )}
-    </ScrollView>
+
+        {isEditing ? (
+          <View
+            style={[
+              styles.editContainer,
+              {backgroundColor: currentColors.card},
+            ]}>
+            <TextInput
+              style={[
+                styles.titleInput,
+                {
+                  color: currentColors.text,
+                  borderBottomColor: currentColors.secondaryText,
+                },
+              ]}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Title"
+              placeholderTextColor={currentColors.secondaryText}
+              maxLength={100}
+              cursorColor={mode ? '#fff' : '#000'}
+            />
+            <TextInput
+              style={[styles.contentInput, {color: currentColors.text}]}
+              value={content}
+              onChangeText={setContent}
+              placeholder="Write your thoughts..."
+              placeholderTextColor={currentColors.secondaryText}
+              multiline
+              textAlignVertical="top"
+              cursorColor={mode ? '#fff' : '#000'}
+            />
+          </View>
+        ) : (
+          <View
+            style={[
+              styles.viewContainer,
+              {backgroundColor: currentColors.card},
+            ]}>
+            <Text style={[styles.titleText, {color: currentColors.text}]}>
+              {title}
+            </Text>
+            <Text style={[styles.contentText, {color: currentColors.text}]}>
+              {content}
+            </Text>
+            {entry.media && entry.media.length > 0 && (
+              <View style={styles.mediaContainer}>
+                {entry.media.map((item, index) => {
+                  if (item.type.startsWith('image')) {
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => {
+                          setSelectedImage(item.uri);
+                          setIsImageModalVisible(true);
+                        }}>
+                        <Image
+                          source={{uri: item.uri}}
+                          style={[
+                            styles.mediaPreview,
+                            {backgroundColor: currentColors.mediaBg},
+                          ]}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
+                    );
+                  } else if (item.type.startsWith('video')) {
+                    return (
+                      <Video
+                        key={index}
+                        source={{uri: item.uri}}
+                        style={[
+                          styles.mediaPreview,
+                          {backgroundColor: currentColors.mediaBg},
+                        ]}
+                        resizeMode="cover"
+                        controls={true}
+                      />
+                    );
+                  } else {
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.audioContainer,
+                          {backgroundColor: currentColors.mediaBg},
+                        ]}
+                        onPress={() => playAudio(item.uri)}>
+                        <Icon
+                          name={
+                            isPlaying
+                              ? 'pause-circle-filled'
+                              : 'play-circle-filled'
+                          }
+                          size={40}
+                          color={currentColors.audioIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.audioTime,
+                            {color: currentColors.text},
+                          ]}>
+                          {isPlaying ? playTime : duration}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                })}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Image preview modal */}
+      <Modal
+        visible={isImageModalVisible}
+        transparent={true}
+        onRequestClose={() => setIsImageModalVisible(false)}>
+        <TouchableOpacity
+          style={styles.modalContainer}
+          activeOpacity={1}
+          onPress={() => setIsImageModalVisible(false)}>
+          <View>
+            <Image
+              source={{uri: selectedImage}}
+              style={styles.modalImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setIsImageModalVisible(false)}>
+              <Icon name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <CustomModal
+        visible={modalVisible}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        onConfirm={modalConfig.onConfirm || (() => setModalVisible(false))}
+        onCancel={modalConfig.onCancel}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        isDestructive={modalConfig.isDestructive}
+      />
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: hp(10),
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: hp(2),
+    paddingHorizontal: wp(5),
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerTitle: {
+    fontSize: hp(2.5),
+    fontWeight: 'bold',
+  },
+  backButton: {
+    padding: wp(1),
+  },
+  saveButton: {
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1),
+    borderRadius: wp(2),
+  },
+  saveButtonText: {
+    fontSize: hp(1.8),
+    fontWeight: 'bold',
   },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerButton: {
-    marginHorizontal: 8,
-    padding: 8,
-  },
-  headerButtonText: {
-    color: '#6c63ff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  deleteButton: {
-    marginLeft: 8,
+    borderRadius: wp(4),
+    padding: wp(2),
+    marginLeft: wp(2),
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: wp(10),
+    height: wp(10),
   },
   dateContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: wp(4),
+    marginBottom: hp(1),
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
   },
   dateText: {
-    color: '#666',
-    fontSize: 14,
+    fontSize: hp(1.8),
   },
   editContainer: {
-    padding: 16,
+    padding: wp(4),
+    borderRadius: wp(2),
+    margin: wp(4),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   viewContainer: {
-    padding: 16,
+    padding: wp(4),
+    borderRadius: wp(2),
+    margin: wp(4),
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   titleInput: {
-    fontSize: 24,
+    fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-    padding: 0,
+    marginBottom: hp(2),
+    paddingBottom: hp(1),
+    borderBottomWidth: 1,
   },
   contentInput: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-    minHeight: 200,
-    padding: 0,
+    fontSize: hp(2),
+    lineHeight: hp(3),
+    minHeight: hp(30),
   },
   titleText: {
-    fontSize: 24,
+    fontSize: hp(2.5),
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
+    marginBottom: hp(2),
   },
   contentText: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
+    fontSize: hp(2),
+    lineHeight: hp(3),
+  },
+  mediaContainer: {
+    marginTop: hp(2),
+    gap: hp(1),
+  },
+  mediaPreview: {
+    width: '100%',
+    height: hp(25),
+    borderRadius: wp(2),
+  },
+  audioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: wp(3),
+    borderRadius: wp(2),
+    marginVertical: hp(0.5),
+  },
+  audioTime: {
+    marginLeft: wp(2),
+    fontSize: hp(1.8),
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: wp(95),
+    height: hp(80),
+  },
+  modalClose: {
+    position: 'absolute',
+    top: hp(4),
+    right: wp(6),
+    backgroundColor: 'transparent',
+    padding: wp(2),
   },
 });
 

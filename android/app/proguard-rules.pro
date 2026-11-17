@@ -8,3 +8,38 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# React Native & JNI
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.jni.** { *; }
+
+# Async Storage
+-keep class com.reactnativecommunity.asyncstorage.** { *; }
+
+# React Native Screens
+-keep class com.swmansion.rnscreens.** { *; }
+
+# React Native Vector Icons
+-keep class com.oblador.vectoricons.** { *; }
+
+# React Native Device Info
+-keep class com.learnium.RNDeviceInfo.** { *; }
+
+# React Native Biometrics
+-keep class com.rnbiometrics.** { *; }
+
+# React Native FS
+-keep class com.rnfs.** { *; }
+
+# React Native Video / ExoPlayer / Media3
+-keep class com.brentvatne.react.** { *; }
+-keep class com.brentvatne.exoplayer.** { *; }
+-dontwarn com.google.android.exoplayer2.**
+-dontwarn androidx.media3.**
+
+# Notifee
+-keep class app.notifee.core.** { *; }
+
+# Firebase
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
