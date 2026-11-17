@@ -62,7 +62,7 @@ jobs:
                 findAndPatch(fullPath);
               } else if (entry.name === 'RNAudioRecorderPlayerModule.kt') {
                 let code = fs.readFileSync(fullPath, 'utf8');
-                code = code.replace(/reactContext\.currentActivity/g, 'getCurrentActivity()');
+                code = code.replace(/\bcurrentActivity\b/g, 'getCurrentActivity()');
                 code = code.replace(/mediaPlayer!!\.setDataSource\([^,]+,\s*Uri\.parse/g, 'mediaPlayer!!.setDataSource(reactContext, Uri.parse');
                 fs.writeFileSync(fullPath, code);
                 console.log('Successfully patched: ' + fullPath);
