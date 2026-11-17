@@ -33,7 +33,7 @@ concurrency:
 jobs:
   build-ios:
     name: Build iOS Release
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
