@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useContext} from 'react';
+import React, {useState, useEffect, useRef, useContext, useCallback} from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Image,
   BackHandler,
   Modal,
@@ -20,8 +19,6 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {auth} from '../utils/auth';
 import {storage} from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
@@ -57,7 +54,7 @@ const ViewEntryScreen = ({navigation, route}) => {
 
   const audioPlayer = useRef(new AudioRecorderPlayer());
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     if (isEditing && (title !== entry.title || content !== entry.content)) {
       setModalConfig({
         title: 'Discard Changes',
@@ -76,7 +73,7 @@ const ViewEntryScreen = ({navigation, route}) => {
     }
     navigation.goBack();
     return true;
-  };
+  }, [isEditing, title, content, entry.title, entry.content, navigation]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -84,7 +81,7 @@ const ViewEntryScreen = ({navigation, route}) => {
       handleBackPress,
     );
     return () => backHandler.remove();
-  }, [isEditing, title, content]);
+  }, [handleBackPress]);
 
   const saveChanges = async () => {
     if (
@@ -208,15 +205,18 @@ const ViewEntryScreen = ({navigation, route}) => {
 
   // Clean up playback listener on unmount:
   useEffect(() => {
+    const player = audioPlayer.current;
     return () => {
-      audioPlayer.current.stopPlayer();
-      audioPlayer.current.removePlayBackListener();
+      if (player) {
+        player.stopPlayer();
+        player.removePlayBackListener();
+      }
     };
   }, []);
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'android' ? insets.top : 0}
       style={[styles.container, {backgroundColor: currentColors.background}]}>
       <StatusBar barStyle="light-content" />

@@ -10,28 +10,29 @@
  *   iOS     – Use the public iTunes Lookup API (no auth required) to
  *             retrieve the latest App Store version string.
  *
- * When a newer version is detected the hook shows a native Alert with
- * two actions:
- *   • "Not Now"   – dismisses the dialog (cancellable).
+ * When a newer version is detected, the hook provides a themed modal
+ * via <UpdateModal /> with two actions:
+ *   • "Not Now"    – dismisses the modal.
  *   • "Update Now" – opens the respective store listing directly.
  *
  * Usage:
- *   Simply call `useAppUpdateCheck()` once inside any mounted screen.
- *   The check runs once on mount and silently swallows all errors so
- *   that a failed network request never crashes the app.
+ *   const { UpdateModal } = useAppUpdateCheck();
+ *   // In JSX:
+ *   <UpdateModal />
  */
 
-import {useEffect} from 'react';
-import {Alert, Linking, Platform} from 'react-native';
+import React, {useState, useEffect, useCallback} from 'react';
+import {Linking, Platform} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import CustomModal from '../components/CustomModal';
 
 // ─── Store configuration ──────────────────────────────────────────────────────
 
 /** Android package name as published on Google Play */
 const ANDROID_PACKAGE_ID = 'com.baltorotech.myjournal';
 
-/** iOS App Store numeric ID  ← replace with your real App Store ID */
-const IOS_APP_STORE_ID = '0000000000'; // TODO: set your App Store numeric ID
+/** iOS App Store numeric ID  ← replace with your real App Store ID if needed */
+const IOS_APP_STORE_ID = '0000000000';
 
 /** iOS Bundle Identifier (used for iTunes Lookup) */
 const IOS_BUNDLE_ID = 'com.baltorotech.myjournal';
@@ -84,13 +85,15 @@ const fetchAndroidStoreVersion = async packageId => {
   }).then(r => r.text());
 
   // The version string is embedded in a JSON-like data blob inside the HTML.
-  // Pattern: ["<semver>"] surrounded by known markers.
   const match = html.match(/\[\["(\d+\.\d+(?:\.\d+)*)"\]\]/);
-  if (match?.[1]) return match[1];
+  if (match?.[1]) return {version: match[1], storeUrl: PLAY_STORE_URL};
+
+  const match2 = html.match(/\[\[\["(\d+\.\d+(?:\.\d+)*)"\]\]\]/);
+  if (match2?.[1]) return {version: match2[1], storeUrl: PLAY_STORE_URL};
 
   // Fallback regex pattern (Google sometimes changes the HTML structure)
   const fallback = html.match(/Current Version.*?<\/span>.*?>([\d.]+)<\/span>/s);
-  if (fallback?.[1]) return fallback[1].trim();
+  if (fallback?.[1]) return {version: fallback[1].trim(), storeUrl: PLAY_STORE_URL};
 
   throw new Error('Unable to parse Play Store version from HTML');
 };
@@ -102,14 +105,27 @@ const fetchIOSStoreVersion = async bundleId => {
   const url = `https://itunes.apple.com/lookup?bundleId=${bundleId}&country=us`;
   const json = await fetch(url).then(r => r.json());
 
-  const version = json?.results?.[0]?.version;
-  if (!version) throw new Error('iTunes Lookup returned no results');
-  return version;
+  const result = json?.results?.[0];
+  if (!result?.version) throw new Error('iTunes Lookup returned no results');
+  return {
+    version: result.version,
+    storeUrl:
+      result.trackViewUrl ||
+      (IOS_APP_STORE_ID !== '0000000000' ? APP_STORE_URL : null),
+  };
 };
 
 // ─── Store URL opener ─────────────────────────────────────────────────────────
 
-const openStoreURL = async () => {
+const openStoreURL = async customUrl => {
+  if (customUrl) {
+    try {
+      await Linking.openURL(customUrl);
+      return;
+    } catch {
+      // fallback to platform standard
+    }
+  }
   if (Platform.OS === 'android') {
     try {
       await Linking.openURL(PLAY_STORE_MARKET_URL);
@@ -117,55 +133,43 @@ const openStoreURL = async () => {
       // market:// not available (emulator / no Play Store) → fall back to web
       await Linking.openURL(PLAY_STORE_URL);
     }
-  } else {
+  } else if (IOS_APP_STORE_ID !== '0000000000') {
     await Linking.openURL(APP_STORE_URL);
   }
-};
-
-// ─── Alert ────────────────────────────────────────────────────────────────────
-
-const showUpdateAlert = storeVersion => {
-  const storeName =
-    Platform.OS === 'android' ? 'Google Play Store' : 'App Store';
-
-  Alert.alert(
-    '🚀 Update Available',
-    `Version ${storeVersion} is now available on the ${storeName}. Update now to get the latest features and improvements!`,
-    [
-      {
-        text: 'Not Now',
-        style: 'cancel',
-      },
-      {
-        text: 'Update Now',
-        onPress: openStoreURL,
-      },
-    ],
-    {cancelable: true},
-  );
 };
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 const useAppUpdateCheck = () => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState({
+    version: '',
+    storeUrl: null,
+  });
+
   useEffect(() => {
     let cancelled = false;
 
     const checkForUpdate = async () => {
       try {
-        // Get the version currently installed on the device
         const installedVersion = await DeviceInfo.getVersion();
 
-        // Fetch the latest version from the relevant store
-        const storeVersion =
+        const storeInfo =
           Platform.OS === 'android'
             ? await fetchAndroidStoreVersion(ANDROID_PACKAGE_ID)
             : await fetchIOSStoreVersion(IOS_BUNDLE_ID);
 
         if (cancelled) return;
 
-        if (isNewerVersion(installedVersion, storeVersion)) {
-          showUpdateAlert(storeVersion);
+        if (
+          storeInfo?.version &&
+          isNewerVersion(installedVersion, storeInfo.version)
+        ) {
+          setUpdateInfo({
+            version: storeInfo.version,
+            storeUrl: storeInfo.storeUrl,
+          });
+          setModalVisible(true);
         }
       } catch (error) {
         // Silently swallow – update checks must never crash the app
@@ -179,6 +183,42 @@ const useAppUpdateCheck = () => {
       cancelled = true;
     };
   }, []);
+
+  const handleUpdateNow = useCallback(() => {
+    setModalVisible(false);
+    openStoreURL(updateInfo.storeUrl);
+  }, [updateInfo.storeUrl]);
+
+  const handleDismiss = useCallback(() => {
+    setModalVisible(false);
+  }, []);
+
+  const UpdateModal = useCallback(() => {
+    const storeName =
+      Platform.OS === 'android' ? 'Google Play Store' : 'App Store';
+
+    return (
+      <CustomModal
+        visible={modalVisible}
+        title="🚀 Update Available"
+        message={`Version ${updateInfo.version} is now available on the ${storeName}. Update now to get the latest features and improvements!`}
+        confirmText="Update Now"
+        cancelText="Not Now"
+        onConfirm={handleUpdateNow}
+        onCancel={handleDismiss}
+      />
+    );
+  }, [modalVisible, updateInfo.version, handleUpdateNow, handleDismiss]);
+
+  return {
+    isUpdateAvailable: modalVisible,
+    updateInfo,
+    modalVisible,
+    setModalVisible,
+    handleUpdateNow,
+    handleDismiss,
+    UpdateModal,
+  };
 };
 
 export default useAppUpdateCheck;

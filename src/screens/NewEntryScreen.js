@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useContext} from 'react';
+import React, {useState, useEffect, useRef, useContext, useCallback} from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   Image,
   PermissionsAndroid,
@@ -15,13 +14,11 @@ import {
 } from 'react-native';
 import CustomModal from '../components/CustomModal';
 import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {auth} from '../utils/auth';
 import {
   storage,
   TWO_HOURS,
   MILLISECONDS_PER_DAY,
-  MILLISECONDS_PER_MIN,
 } from '../utils/storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
@@ -34,9 +31,8 @@ import {
 } from 'react-native-responsive-screen';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-const audioRecorderPlayer = new AudioRecorderPlayer();
-
 const NewEntryScreen = ({navigation, route}) => {
+  const audioRecorderPlayer = useRef(new AudioRecorderPlayer()).current;
   const {isDarkMode} = useContext(ThemeContext);
   const insets = useSafeAreaInsets();
   const mode = isDarkMode;
@@ -89,33 +85,7 @@ const NewEntryScreen = ({navigation, route}) => {
     cameraType: 'back',
   };
 
-  // Handle back button
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      handleBackPress,
-    );
-    return () => backHandler.remove();
-  }, [title, content, media]);
-
-  const recordListenerRef = useRef(null);
-
-  // Cleanup audio on component unmount
-  useEffect(() => {
-    return () => {
-      audioRecorderPlayer.removeRecordBackListener();
-      recordListenerRef.current = null;
-      audioRecorderPlayer.removePlayBackListener();
-      if (isRecording) {
-        audioRecorderPlayer.stopRecorder();
-      }
-      if (isPlaying) {
-        audioRecorderPlayer.stopPlayer();
-      }
-    };
-  }, []);
-
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     if (title.trim() || content.trim() || media.length > 0) {
       setModalConfig({
         title: 'Discard Changes',
@@ -134,7 +104,37 @@ const NewEntryScreen = ({navigation, route}) => {
     }
     navigation.goBack();
     return true;
-  };
+  }, [content, media.length, navigation, title]);
+
+  // Handle back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress,
+    );
+    return () => backHandler.remove();
+  }, [handleBackPress]);
+
+  const recordListenerRef = useRef(null);
+  const isRecordingRef = useRef(false);
+  const isPlayingRef = useRef(false);
+  isRecordingRef.current = isRecording;
+  isPlayingRef.current = isPlaying;
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      audioRecorderPlayer.removeRecordBackListener();
+      recordListenerRef.current = null;
+      audioRecorderPlayer.removePlayBackListener();
+      if (isRecordingRef.current) {
+        audioRecorderPlayer.stopRecorder();
+      }
+      if (isPlayingRef.current) {
+        audioRecorderPlayer.stopPlayer();
+      }
+    };
+  }, [audioRecorderPlayer]);
 
   // Request camera permissions (handles photo vs video requirements)
   const requestCameraPermission = async (isVideo = false) => {

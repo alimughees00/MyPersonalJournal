@@ -42,7 +42,8 @@ const AppContent = () => {
 
 const App = () => {
   useEffect(() => {
-    LogBox.ignoreAllLogs();
+    // Only ignore known non-fatal cosmetic logs in development
+    LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
     // Initialize notifications
     notificationService.initialize().catch(err => {

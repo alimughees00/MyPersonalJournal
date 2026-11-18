@@ -58,10 +58,56 @@ export const storage = {
     }
   },
 
+  async persistMediaFiles(mediaArray) {
+    if (!mediaArray || !mediaArray.length) return [];
+    try {
+      const mediaDir = `${RNFS.DocumentDirectoryPath}/journal_media`;
+      if (!(await RNFS.exists(mediaDir))) {
+        await RNFS.mkdir(mediaDir);
+      }
+      const persisted = [];
+      for (const item of mediaArray) {
+        if (!item.uri || !item.uri.startsWith('file://')) {
+          persisted.push(item);
+          continue;
+        }
+        const rawPath = item.uri.replace('file://', '');
+        // If already inside the permanent journal_media folder, keep it
+        if (rawPath.startsWith(mediaDir)) {
+          persisted.push(item);
+          continue;
+        }
+        try {
+          const ext = rawPath.split('.').pop() || 'dat';
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+          const destPath = `${mediaDir}/${fileName}`;
+          if (await RNFS.exists(rawPath)) {
+            await RNFS.copyFile(rawPath, destPath);
+            persisted.push({...item, uri: `file://${destPath}`});
+          } else {
+            persisted.push(item);
+          }
+        } catch (err) {
+          console.warn('Failed to persist media file:', err);
+          persisted.push(item);
+        }
+      }
+      return persisted;
+    } catch (e) {
+      console.warn('Error in persistMediaFiles:', e);
+      return mediaArray;
+    }
+  },
+
   async saveEntry(entry) {
     try {
       const entries = await this.getEntries();
       const entryId = entry.id || Date.now().toString();
+
+      // Ensure media files are persisted in app document storage
+      const persistedMedia = entry.media && entry.media.length > 0
+        ? await this.persistMediaFiles(entry.media)
+        : entry.media || [];
 
       // Calculate expiration time if not already set
       const expirationTime =
@@ -73,6 +119,7 @@ export const storage = {
       const newEntry = {
         ...entry,
         id: entryId,
+        media: persistedMedia,
         date: entry.date || new Date().toISOString(),
         destructTime: entry.destructTime || 0,
         expirationTime,

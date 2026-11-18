@@ -57,9 +57,9 @@ const HomeScreen = ({ navigation, route }) => {
   }, []);
 
   // ─── Cross-platform update check (Android → Play Store, iOS → App Store) ───────
-  // Fetches the latest store version on mount and shows an Alert with an
+  // Fetches the latest store version on mount and shows a modal with an
   // "Update Now" button that opens the relevant store listing directly.
-  useAppUpdateCheck();
+  const { UpdateModal } = useAppUpdateCheck();
   // ─────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -368,6 +368,8 @@ const HomeScreen = ({ navigation, route }) => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <UpdateModal />
     </View>
   );
 };

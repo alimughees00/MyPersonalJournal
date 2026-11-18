@@ -121,11 +121,11 @@ export const privacyLock = {
    * Returns a friendly name for the biometric sensor
    */
   getBiometryTitle(biometryType) {
-    if (biometryType === BiometryTypes.FaceID) {
+    if (biometryType === BiometryTypes?.FaceID || biometryType === 'FaceID') {
       return 'Face ID';
-    } else if (biometryType === BiometryTypes.TouchID) {
+    } else if (biometryType === BiometryTypes?.TouchID || biometryType === 'TouchID') {
       return 'Touch ID';
-    } else if (biometryType === BiometryTypes.Biometrics) {
+    } else if (biometryType === BiometryTypes?.Biometrics || biometryType === 'Biometrics') {
       return 'Fingerprint / Biometrics';
     }
     return 'Biometrics';

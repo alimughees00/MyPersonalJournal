@@ -96,6 +96,7 @@ const SplashScreen = ({onFinish}) => {
       pulseRing();
       setTimeout(onFinish, 1400);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
