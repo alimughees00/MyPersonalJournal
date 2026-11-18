@@ -13,7 +13,7 @@ on:
           - ad-hoc
           - development
       build_number:
-        description: 'Build Number / CFBundleVersion (e.g. 3, leave blank to keep default in project)'
+        description: 'Build Number / CFBundleVersion (leave blank to auto-increment via GitHub run number)'
         required: false
         default: ''
         type: string
@@ -106,6 +106,7 @@ jobs:
         env:
           INPUT_VERSION_NAME: ${{ github.event.inputs.version_name }}
           INPUT_BUILD_NUMBER: ${{ github.event.inputs.build_number }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           VERSION_NAME="$INPUT_VERSION_NAME"
           if [ -z "$VERSION_NAME" ] && [ "${{ github.ref_type }}" = "tag" ]; then
@@ -113,10 +114,19 @@ jobs:
             echo "Using marketing version from tag: $VERSION_NAME"
           fi
 
-          if [ -n "$INPUT_BUILD_NUMBER" ]; then
-            echo "Updating build number (CFBundleVersion) to: $INPUT_BUILD_NUMBER"
-            xcrun agvtool new-version -all "$INPUT_BUILD_NUMBER"
+          BUILD_NUMBER="$INPUT_BUILD_NUMBER"
+          if [ -z "$BUILD_NUMBER" ]; then
+            # Automatically calculate build number so TestFlight never rejects duplicate/lower build numbers
+            CURRENT_BASE=$(xcrun agvtool what-version | tr -cd '0-9')
+            CURRENT_BASE=${CURRENT_BASE:-2}
+            BUILD_NUMBER=$(( CURRENT_BASE + RUN_NUMBER ))
+            echo "Auto-incrementing build number (Base $CURRENT_BASE + GitHub Run #$RUN_NUMBER): $BUILD_NUMBER"
+          else
+            echo "Using user-specified build number: $BUILD_NUMBER"
           fi
+
+          echo "Applying build number (CFBundleVersion): $BUILD_NUMBER"
+          xcrun agvtool new-version -all "$BUILD_NUMBER"
 
           if [ -n "$VERSION_NAME" ]; then
             echo "Updating marketing version (CFBundleShortVersionString) to: $VERSION_NAME"
